@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from io import BytesIO
 
 # Titel der App
 st.title("Touren-Such-App")
@@ -28,8 +29,11 @@ if uploaded_file:
         search_numbers = ["602", "620", "350", "520", "156"]  # Zahlen, nach denen in 'Unnamed: 11' gesucht wird
         search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]  # Zeichenfolgen, nach denen in 'Unnamed: 14' gesucht wird
 
-        # Prüfen, ob die Spalten 'Unnamed: 11' und 'Unnamed: 14' vorhanden sind
-        if 'Unnamed: 11' in df.columns and 'Unnamed: 14' in df.columns:
+        # Prüfen, ob die Spalten vorhanden sind
+        required_columns = ['Unnamed: 0', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 6',
+                            'Unnamed: 7', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
+
+        if all(col in df.columns for col in required_columns):
             # Suche nach den Zahlen in 'Unnamed: 11'
             number_matches = df[df['Unnamed: 11'].astype(str).isin(search_numbers)]
 
@@ -39,22 +43,41 @@ if uploaded_file:
             # Kombinieren der Suchergebnisse
             combined_results = pd.concat([number_matches, text_matches]).drop_duplicates()
 
+            # Nur die gewünschten Spalten extrahieren
+            final_results = combined_results[required_columns]
+
             # Suchergebnisse anzeigen
             st.write("Suchergebnisse:")
-            if not combined_results.empty:
-                st.dataframe(combined_results)
+            if not final_results.empty:
+                st.dataframe(final_results)
 
-                # Export der Suchergebnisse
+                # Export in Excel-Datei
+                output = BytesIO()
+                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                    # Schreibe Daten in Excel
+                    final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
+
+                    # Lesbarkeit verbessern
+                    workbook = writer.book
+                    worksheet = writer.sheets["Suchergebnisse"]
+
+                    # Auto-Adjust Columns
+                    for i, column in enumerate(final_results.columns):
+                        column_width = max(final_results[column].astype(str).map(len).max(), len(column))
+                        worksheet.set_column(i, i, column_width)
+
+                # Export-Button für Excel-Datei
                 st.download_button(
-                    label="Suchergebnisse als CSV herunterladen",
-                    data=combined_results.to_csv(index=False).encode('utf-8'),
-                    file_name="suchergebnisse.csv",
-                    mime="text/csv",
+                    label="Suchergebnisse als Excel herunterladen",
+                    data=output.getvalue(),
+                    file_name="Suchergebnisse.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
             else:
                 st.warning("Keine Treffer gefunden.")
         else:
-            st.error("Die benötigten Spalten 'Unnamed: 11' und 'Unnamed: 14' fehlen in der Datei.")
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            st.error(f"Die folgenden benötigten Spalten fehlen in der Datei: {', '.join(missing_columns)}")
 
     except Exception as e:
         st.error(f"Fehler beim Verarbeiten der Datei: {e}")
