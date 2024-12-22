@@ -1,10 +1,9 @@
 import streamlit as st
 import pandas as pd
-import re
 
 # Titel der App
-st.title("Touren-Filter und Such-App")
-st.write("Lade eine Datei hoch, und die Daten werden automatisch durchsucht.")
+st.title("Touren-Such-App")
+st.write("Lade eine Datei hoch, und die Daten werden in den angegebenen Spalten automatisch durchsucht.")
 
 # Datei-Upload
 uploaded_file = st.file_uploader("Lade deine Excel- oder CSV-Datei hoch", type=["xlsx", "xls", "csv"])
@@ -26,33 +25,36 @@ if uploaded_file:
         st.dataframe(df)
 
         # **Automatische Suchoptionen**
-        search_numbers = ["602", "620", "350", "520", "156"]  # Zahlen, nach denen gesucht wird
-        search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]  # Zeichenfolgen, nach denen gesucht wird
+        search_numbers = ["602", "620", "350", "520", "156"]  # Zahlen, nach denen in 'Unnamend: 11' gesucht wird
+        search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]  # Zeichenfolgen, nach denen in 'Unnamend: 14' gesucht wird
 
-        # Automatische Suche in den Daten
-        search_results = []
-        for _, row in df.iterrows():
-            row_content = " ".join(row.astype(str).values)  # Zeileninhalt als ein String
-            # Überprüfen auf Zahlen und Strings
-            if any(re.search(rf"\b{num}\b", row_content) for num in search_numbers) or \
-               any(re.search(rf"{string}", row_content, re.IGNORECASE) for string in search_strings):
-                search_results.append(row)
+        # Prüfen, ob die Spalten 'Unnamend: 11' und 'Unnamend: 14' vorhanden sind
+        if 'Unnamend: 11' in df.columns and 'Unnamend: 14' in df.columns:
+            # Suche nach den Zahlen in 'Unnamend: 11'
+            number_matches = df[df['Unnamend: 11'].astype(str).isin(search_numbers)]
 
-        # Suchergebnisse anzeigen
-        search_results_df = pd.DataFrame(search_results)
-        st.write("Suchergebnisse:")
-        if not search_results_df.empty:
-            st.dataframe(search_results_df)
-            
-            # Export der Suchergebnisse
-            st.download_button(
-                label="Suchergebnisse als CSV herunterladen",
-                data=search_results_df.to_csv(index=False).encode('utf-8'),
-                file_name="suchergebnisse.csv",
-                mime="text/csv",
-            )
+            # Suche nach den Zeichenfolgen in 'Unnamend: 14'
+            text_matches = df[df['Unnamend: 14'].str.contains('|'.join(search_strings), case=False, na=False)]
+
+            # Kombinieren der Suchergebnisse
+            combined_results = pd.concat([number_matches, text_matches]).drop_duplicates()
+
+            # Suchergebnisse anzeigen
+            st.write("Suchergebnisse:")
+            if not combined_results.empty:
+                st.dataframe(combined_results)
+
+                # Export der Suchergebnisse
+                st.download_button(
+                    label="Suchergebnisse als CSV herunterladen",
+                    data=combined_results.to_csv(index=False).encode('utf-8'),
+                    file_name="suchergebnisse.csv",
+                    mime="text/csv",
+                )
+            else:
+                st.warning("Keine Treffer gefunden.")
         else:
-            st.warning("Keine Treffer gefunden.")
+            st.error("Die benötigten Spalten 'Unnamend: 11' und 'Unnamend: 14' fehlen in der Datei.")
 
     except Exception as e:
         st.error(f"Fehler beim Verarbeiten der Datei: {e}")
