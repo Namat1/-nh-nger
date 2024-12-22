@@ -73,6 +73,20 @@ if uploaded_file:
             # Sortieren nach Nachname und Vorname
             final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
 
+            # Verdienstberechnung
+            payment_mapping = {
+                "602": 40,
+                "156": 40,
+                "620": 20,
+                "350": 20,
+                "520": 20
+            }
+            final_results['Verdienst'] = final_results['Kennzeichen'].map(payment_mapping).fillna(0)
+
+            # Tabellarische Zusammenfassung
+            summary = final_results.groupby(['Nachname', 'Vorname'])['Verdienst'].sum().reset_index()
+            summary = summary.rename(columns={"Verdienst": "Gesamtverdienst"})
+
             # Suchergebnisse anzeigen
             st.write("Suchergebnisse:")
             if not final_results.empty:
@@ -83,25 +97,29 @@ if uploaded_file:
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                     # Schreibe Kalenderwoche in die erste Zeile
                     workbook = writer.book
+
+                    # Blatt mit Suchergebnissen
                     worksheet = workbook.add_worksheet("Suchergebnisse")
                     writer.sheets["Suchergebnisse"] = worksheet
-
-                    # Kalenderwoche in die erste Zeile schreiben
                     worksheet.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
-
-                    # Schreibe die Daten ab der zweiten Zeile
                     final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
-
-                    # Lesbarkeit verbessern
                     for i, column in enumerate(final_results.columns):
                         column_width = max(final_results[column].astype(str).map(len).max(), len(column))
                         worksheet.set_column(i, i, column_width)
 
+                    # Blatt mit Zusammenfassung
+                    summary_worksheet = workbook.add_worksheet("Zusammenfassung")
+                    writer.sheets["Zusammenfassung"] = summary_worksheet
+                    summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=0)
+                    for i, column in enumerate(summary.columns):
+                        column_width = max(summary[column].astype(str).map(len).max(), len(column))
+                        summary_worksheet.set_column(i, i, column_width)
+
                 # Export-Button für Excel-Datei
                 st.download_button(
-                    label="Suchergebnisse als Excel herunterladen",
+                    label="Suchergebnisse und Zusammenfassung als Excel herunterladen",
                     data=output.getvalue(),
-                    file_name="Suchergebnisse.xlsx",
+                    file_name="Suchergebnisse_mit_Zusammenfassung.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
             else:
