@@ -10,8 +10,17 @@ def filter_tours(file):
         st.error("Tabellenblatt 'Touren' konnte nicht gefunden werden. Überprüfen Sie die Datei.")
         st.stop()
 
+    # Zeige die ersten Zeilen und Spaltennamen für Debugging
+    st.write("Erste Zeilen der Datei:")
+    st.dataframe(df.head())
+    st.write("Gefundene Spalten:")
+    st.write(df.columns.tolist())
+
     # Spaltennamen bereinigen
     df.columns = df.columns.str.strip()
+
+    # Sicherstellen, dass alle Werte Strings sind
+    df = df.astype(str)
 
     # Prüfen, ob die benötigten Spalten vorhanden sind
     required_columns = ['L', 'O', 'A', 'D', 'E', 'G', 'H']
@@ -21,15 +30,26 @@ def filter_tours(file):
         st.error(f"Die folgenden Spalten fehlen in der Datei: {', '.join(missing_columns)}")
         st.stop()
 
-    # Sicherstellen, dass alle Werte Strings sind
-    df = df.astype(str)
-
     # Filterkriterien definieren
     numbers_to_search = ["602", "156", "620", "350", "520"]
     az_mw_values = ["AZ", "Az", "az", "MW", "Mw", "mw"]
 
+    # Debugging: Prüfe die Inhalte der relevanten Spalten
+    st.write("Beispielwerte aus Spalte 'L':")
+    st.write(df['L'].unique())
+    st.write("Beispielwerte aus Spalte 'O':")
+    st.write(df['O'].unique())
+
     # Zeilen filtern
-    filtered_df = df[(df['L'].isin(numbers_to_search)) & (df['O'].isin(az_mw_values))]
+    try:
+        filtered_df = df[(df['L'].isin(numbers_to_search)) & (df['O'].isin(az_mw_values))]
+    except Exception as e:
+        st.error(f"Fehler beim Filtern der Zeilen: {e}")
+        st.stop()
+
+    # Debugging: Zeige gefilterte Daten
+    st.write("Gefilterte Daten:")
+    st.dataframe(filtered_df)
 
     # Werte aus den relevanten Spalten holen
     result = []
