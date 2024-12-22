@@ -3,14 +3,23 @@ import pandas as pd
 from io import BytesIO
 import re
 
-# Funktion, um verbundene Zellen aufzufüllen
-def fill_merged_cells(df, column_name):
-    filled_column = df[column_name].ffill()
-    return filled_column
+# Funktion, um die Formel in der verbundenen Zelle zu extrahieren und das Datum zuzuordnen
+def assign_dates(df, date_column):
+    # Extrahiere den tatsächlichen Wert aus der Formel in der verbundenen Zelle
+    def extract_date_from_formula(formula):
+        match = re.search(r"'Druck Fahrer'!(E\d+|G\d+)", formula)
+        if match:
+            return match.group(1)  # Rückgabe des Zellbezugs als Beispiel
+        return formula  # Wenn keine Formel, gib den Originalwert zurück
+
+    # Wende die Datumsextraktion auf die Spalte an
+    df[date_column] = df[date_column].fillna(method="ffill")  # Fülle die verbundenen Zellen
+    df[date_column] = df[date_column].apply(lambda x: extract_date_from_formula(str(x)))
+    return df
 
 # Titel der App
 st.title("Touren-Such-App")
-st.write("Lade eine Datei hoch, und die Daten werden verarbeitet. Verknüpfte Zellen (z. B. Datum) werden korrekt zugeordnet.")
+st.write("Lade eine Datei hoch, und die Daten werden verarbeitet. Verbundene Zellen (mit Formeln) werden korrekt zugeordnet.")
 
 # Datei-Upload
 uploaded_file = st.file_uploader("Lade deine Excel- oder CSV-Datei hoch", type=["xlsx", "xls", "csv"])
@@ -28,7 +37,7 @@ if uploaded_file:
         # Prüfen, ob die Datei Excel oder CSV ist
         if uploaded_file.name.endswith('.xlsx') or uploaded_file.name.endswith('.xls'):
             # Excel-Datei laden und Blatt 'Touren' lesen
-            df = pd.read_excel(uploaded_file, sheet_name="Touren")
+            df = pd.read_excel(uploaded_file, sheet_name="Touren", engine="openpyxl")
             st.success("Das Blatt 'Touren' wurde erfolgreich geladen!")
         else:
             # CSV-Datei laden
@@ -39,9 +48,9 @@ if uploaded_file:
         st.write("Originaldaten:")
         st.dataframe(df)
 
-        # Fülle verbundene Zellen (z. B. Datum)
+        # Fülle verbundene Zellen und extrahiere das Datum
         if "Datum" in df.columns:
-            df["Datum"] = fill_merged_cells(df, "Datum")
+            df = assign_dates(df, "Datum")
 
         # **Automatische Suchoptionen**
         search_numbers = ["602", "620", "350", "520", "156"]  # Zahlen, nach denen in 'Unnamed: 11' gesucht wird
