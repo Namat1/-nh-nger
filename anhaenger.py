@@ -15,6 +15,15 @@ def analyze_row_13(file):
         df.dropna(how='all', axis=0, inplace=True)
         df.dropna(how='all', axis=1, inplace=True)
 
+        # Spalten korrekt zuordnen
+        spalte_a = "Unnamed: 0"  # Spalte A (Tournummer)
+        spalte_d = "Pekrul"      # Spalte D (Name Teil 1)
+        spalte_e = "Olaf"        # Spalte E (Name Teil 2)
+        spalte_g = "Unnamed: 6"  # Spalte G (Name Teil 3)
+        spalte_h = "Unnamed: 7"  # Spalte H (Name Teil 4)
+        spalte_l = "Unnamed: 11" # Spalte L (Filterkriterium)
+        spalte_o = "Unnamed: 14" # Spalte O (Filterkriterium)
+
         # Prüfen, ob Zeile 13 existiert
         if len(df) >= 9:  # Zeile 13 in Excel ist Zeile 9 im DataFrame (0-basierter Index)
             row_13 = df.iloc[8]  # Zeile 13 auslesen (Index 8)
@@ -28,12 +37,25 @@ def analyze_row_13(file):
             })
             st.write("Analyse von Zeile 13:")
             st.dataframe(row_13_analysis)
+
+            # Werte aus den relevanten Spalten von Zeile 13 extrahieren
+            tournummer = row_13[spalte_a]
+            name = (
+                f"{row_13[spalte_d]} {row_13[spalte_e]}"
+                if pd.notna(row_13[spalte_d]) and pd.notna(row_13[spalte_e])
+                else f"{row_13[spalte_g]} {row_13[spalte_h]}"
+                if pd.notna(row_13[spalte_g]) and pd.notna(row_13[spalte_h])
+                else "Unbekannt"
+            )
+            filter_l = row_13[spalte_l]
+            filter_o = row_13[spalte_o]
+
+            st.write(f"Tournummer: {tournummer}")
+            st.write(f"Name: {name}")
+            st.write(f"Wert in Spalte L: {filter_l}")
+            st.write(f"Wert in Spalte O: {filter_o}")
         else:
             st.error("Zeile 13 existiert nicht in den eingelesenen Daten.")
-
-        # Zeige die ersten 10 Zeilen der Datei
-        st.write("Erste 10 Zeilen der Daten:")
-        st.dataframe(df.head(10))
 
         # Optional: Datei für den Download vorbereiten
         output = BytesIO()
