@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 import re
+import xlsxwriter
 
 # Titel der App
 st.title("Touren-Such-App")
@@ -128,14 +129,30 @@ if uploaded_file:
                     final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
                     earnings_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=0)
 
-                    # Lesbarkeit verbessern
-                    for i, column in enumerate(final_results.columns):
-                        column_width = max(final_results[column].astype(str).map(len).max(), len(column))
-                        worksheet1.set_column(i, i, column_width)
+                    # Lesbarkeit verbessern und Farben hinzufügen
+                    header_format = workbook.add_format({
+                        'bold': True,
+                        'text_wrap': True,
+                        'valign': 'top',
+                        'fg_color': '#D9EAD3',
+                        'border': 1
+                    })
 
-                    for i, column in enumerate(earnings_summary.columns):
-                        column_width = max(earnings_summary[column].astype(str).map(len).max(), len(column))
-                        worksheet2.set_column(i, i, column_width)
+                    cell_format = workbook.add_format({
+                        'border': 1
+                    })
+
+                    for col_num, value in enumerate(final_results.columns):
+                        worksheet1.write(2, col_num, value, header_format)
+                    for row_num, row_data in final_results.iterrows():
+                        for col_num, value in enumerate(row_data):
+                            worksheet1.write(row_num + 3, col_num, value, cell_format)
+
+                    for col_num, value in enumerate(earnings_summary.columns):
+                        worksheet2.write(0, col_num, value, header_format)
+                    for row_num, row_data in earnings_summary.iterrows():
+                        for col_num, value in enumerate(row_data):
+                            worksheet2.write(row_num + 1, col_num, value, cell_format)
 
                 # Export-Button für Excel-Datei
                 st.download_button(
