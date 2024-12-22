@@ -55,11 +55,11 @@ if uploaded_file:
             # Suche nach "AZ" in 'Unnamed: 14'
             text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False)]
 
-            # Kombinieren der Suchergebnisse und Duplikate entfernen
-            combined_results = pd.concat([number_matches, text_matches]).drop_duplicates()
+            # Kombinieren der Suchergebnisse
+            combined_results = pd.concat([number_matches, text_matches])
 
-            # Optional: Sicherstellen, dass nur die Zeilen mit denselben relevanten Spalten einzigartig sind
-            combined_results = combined_results.drop_duplicates(subset=required_columns)
+            # Entfernen von Duplikaten basierend auf Schlüsselspalten
+            combined_results = combined_results.drop_duplicates(subset=['Unnamed: 3', 'Unnamed: 4', 'Unnamed: 11'])
 
             # 607 aus allen Ergebnissen ausschließen
             combined_results = combined_results[combined_results['Unnamed: 11'].astype(str) != "607"]
