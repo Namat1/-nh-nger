@@ -41,8 +41,8 @@ if uploaded_file:
         }))
 
         # **Automatische Suchoptionen**
-        search_numbers = ["602", "620", "350", "520", "156"]  # Zahlen, nach denen in 'Unnamed: 11' gesucht wird
-        search_strings = ["AZ"]  # Nur nach "AZ" in 'Unnamed: 14' suchen
+        search_numbers = ["602", "620", "350", "520", "156"]
+        search_strings = ["AZ"]
 
         # Prüfen, ob die Spalten vorhanden sind
         required_columns = ['Unnamed: 0', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 6',
@@ -74,6 +74,9 @@ if uploaded_file:
             }
             final_results = combined_results[required_columns].rename(columns=renamed_columns)
 
+            # **Nur AZ in 'Art 2' behalten**
+            final_results = final_results[final_results['Art 2'] == 'AZ']
+
             # Wertzuweisung basierend auf Kennzeichen
             def calculate_earnings(kennzeichen):
                 if kennzeichen in ["602", "156"]:
@@ -91,7 +94,7 @@ if uploaded_file:
             earnings_summary = final_results.groupby(['Nachname', 'Vorname'], as_index=False)['Verdienst (€)'].sum()
             earnings_summary = earnings_summary.rename(columns={'Verdienst (€)': 'Gesamtverdienst (€)'})
 
-            # **Sortieren nach Nachname und Vorname**
+            # Sortieren nach Nachname und Vorname
             final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
             earnings_summary = earnings_summary.sort_values(by=['Nachname', 'Vorname'])
 
