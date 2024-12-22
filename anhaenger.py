@@ -94,13 +94,16 @@ if uploaded_files:
     # Gesamtergebnisse zusammenführen
     if all_results:
         combined_results = pd.concat(all_results, ignore_index=True)
-        combined_results = combined_results.drop(columns=['Datei', 'Art'])  # Entfernen der Spalten "Datei" und "Art"
+
+        # Entfernen unerwünschter Spalten
+        columns_to_drop = [col for col in ['Datei', 'Art'] if col in combined_results.columns]
+        final_output_results = combined_results.drop(columns=columns_to_drop)
 
         combined_summary = pd.concat(all_summaries, ignore_index=True)
 
         # Gesamte Zusammenfassung anzeigen
         st.write("Kombinierte Suchergebnisse:")
-        st.dataframe(combined_results)
+        st.dataframe(final_output_results)
         st.write("Zusammenfassung nach KW:")
         st.dataframe(combined_summary)
 
@@ -112,9 +115,9 @@ if uploaded_files:
             worksheet = workbook.add_worksheet("Suchergebnisse")
             writer.sheets["Suchergebnisse"] = worksheet
             worksheet.write(0, 0, "Kombinierte Suchergebnisse")
-            combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
-            for col_idx, column_name in enumerate(combined_results.columns):
-                col_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name))
+            final_output_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
+            for col_idx, column_name in enumerate(final_output_results.columns):
+                col_width = max(final_output_results[column_name].astype(str).map(len).max(), len(column_name))
                 worksheet.set_column(col_idx, col_idx, col_width)
 
             # Zusammenfassung nach KW
