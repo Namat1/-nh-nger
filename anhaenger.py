@@ -55,8 +55,11 @@ if uploaded_file:
             # Suche nach "AZ" in 'Unnamed: 14'
             text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False)]
 
-            # Kombinieren der Suchergebnisse
+            # Kombinieren der Suchergebnisse und Duplikate entfernen
             combined_results = pd.concat([number_matches, text_matches]).drop_duplicates()
+
+            # Optional: Sicherstellen, dass nur die Zeilen mit denselben relevanten Spalten einzigartig sind
+            combined_results = combined_results.drop_duplicates(subset=required_columns)
 
             # 607 aus allen Ergebnissen ausschließen
             combined_results = combined_results[combined_results['Unnamed: 11'].astype(str) != "607"]
@@ -74,7 +77,7 @@ if uploaded_file:
             }
             final_results = combined_results[required_columns].rename(columns=renamed_columns)
 
-            # **Nur AZ in 'Art 2' behalten**
+            # Nur AZ in 'Art 2' behalten
             final_results = final_results[final_results['Art 2'] == 'AZ']
 
             # Wertzuweisung basierend auf Kennzeichen
@@ -94,7 +97,7 @@ if uploaded_file:
             earnings_summary = final_results.groupby(['Nachname', 'Vorname'], as_index=False)['Verdienst (€)'].sum()
             earnings_summary = earnings_summary.rename(columns={'Verdienst (€)': 'Gesamtverdienst (€)'})
 
-            # **Sortieren nach Nachname und Vorname**
+            # Sortieren nach Nachname und Vorname
             final_results = final_results.sort_values(by=['Nachname', 'Vorname'], ascending=True)
             earnings_summary = earnings_summary.sort_values(by=['Nachname', 'Vorname'], ascending=True)
 
