@@ -41,8 +41,8 @@ if uploaded_file:
         }))
 
         # **Automatische Suchoptionen**
-        search_numbers = ["602", "620", "350", "520", "156"]
-        search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]
+        search_numbers = ["602", "620", "350", "520", "156"]  # Zahlen, nach denen in 'Unnamed: 11' gesucht wird
+        search_strings = ["AZ"]  # Nur nach "AZ" in 'Unnamed: 14' suchen
 
         # Prüfen, ob die Spalten vorhanden sind
         required_columns = ['Unnamed: 0', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 6',
@@ -52,7 +52,7 @@ if uploaded_file:
             # Suche nach den Zahlen in 'Unnamed: 11', aber schließe 607 aus
             number_matches = df[df['Unnamed: 11'].astype(str).isin(search_numbers)]
 
-            # Suche nach den Zeichenfolgen in 'Unnamed: 14'
+            # Suche nach "AZ" in 'Unnamed: 14'
             text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False)]
 
             # Kombinieren der Suchergebnisse
