@@ -41,8 +41,8 @@ if uploaded_file:
         }))
 
         # **Automatische Suchoptionen**
-        search_numbers = ["602", "620", "350", "520", "156"]  # Zahlen, nach denen in 'Unnamed: 11' gesucht wird
-        search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]  # Zeichenfolgen, nach denen in 'Unnamed: 14' gesucht wird
+        search_numbers = ["602", "620", "350", "520", "156"]
+        search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]
 
         # Prüfen, ob die Spalten vorhanden sind
         required_columns = ['Unnamed: 0', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 6',
@@ -95,81 +95,58 @@ if uploaded_file:
             final_results = final_results.sort_values(by=['Nachname'])
             earnings_summary = earnings_summary.sort_values(by=['Nachname'])
 
-            # Suchergebnisse anzeigen
-            st.write("Suchergebnisse mit Verdienst:")
-            if not final_results.empty:
-                st.dataframe(final_results.style.set_properties(**{
-                    'background-color': '#e6f7ff',
-                    'border': '1px solid #cce7ff',
-                    'color': '#003366',
-                    'font-size': '12px',
-                    'text-align': 'center'
-                }))
-                st.write("Zusammenfassung des Verdienstes pro Fahrer:")
-                st.dataframe(earnings_summary.style.set_properties(**{
-                    'background-color': '#f9f9f9',
-                    'border': '1px solid #ccc',
-                    'color': '#333',
-                    'font-size': '12px',
-                    'text-align': 'center'
-                }))
+            # Export in Excel-Datei
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                workbook = writer.book
+                worksheet1 = workbook.add_worksheet("Suchergebnisse")
+                worksheet2 = workbook.add_worksheet("Zusammenfassung")
 
-                # Export in Excel-Datei
-                output = BytesIO()
-                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    # Schreibe Kalenderwoche in die erste Zeile
-                    workbook = writer.book
-                    worksheet1 = workbook.add_worksheet("Suchergebnisse")
-                    worksheet2 = workbook.add_worksheet("Zusammenfassung")
+                writer.sheets["Suchergebnisse"] = worksheet1
+                writer.sheets["Zusammenfassung"] = worksheet2
 
-                    writer.sheets["Suchergebnisse"] = worksheet1
-                    writer.sheets["Zusammenfassung"] = worksheet2
+                worksheet1.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
 
-                    # Kalenderwoche in die erste Zeile schreiben
-                    worksheet1.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
+                # Schreibe die Daten ab der zweiten Zeile
+                final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
+                earnings_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=0)
 
-                    # Schreibe die Daten ab der zweiten Zeile
-                    final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
-                    earnings_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=0)
+                # Lesbarkeit verbessern und Farben hinzufügen
+                header_format = workbook.add_format({
+                    'bold': True,
+                    'text_wrap': True,
+                    'valign': 'top',
+                    'fg_color': '#D9EAD3',
+                    'border': 1
+                })
 
-                    # Lesbarkeit verbessern und Farben hinzufügen
-                    header_format = workbook.add_format({
-                        'bold': True,
-                        'text_wrap': True,
-                        'valign': 'top',
-                        'fg_color': '#D9EAD3',
-                        'border': 1
-                    })
+                cell_format = workbook.add_format({
+                    'border': 1,
+                    'text_wrap': True,
+                    'valign': 'top',
+                    'fg_color': '#FFFAF0'
+                })
 
-                    cell_format = workbook.add_format({
-                        'border': 1
-                    })
+                for col_num, value in enumerate(final_results.columns):
+                    worksheet1.write(2, col_num, value, header_format)
+                    worksheet1.set_column(col_num, col_num, 20)
+                for row_num, row_data in final_results.iterrows():
+                    for col_num, value in enumerate(row_data):
+                        worksheet1.write(row_num + 3, col_num, value if pd.notnull(value) else '', cell_format)
 
-                    for col_num, value in enumerate(final_results.columns):
-                        worksheet1.write(2, col_num, value, header_format)
-                    for row_num, row_data in final_results.iterrows():
-                        for col_num, value in enumerate(row_data):
-                            worksheet1.write(row_num + 3, col_num, value if pd.notnull(value) else '', cell_format)
+                for col_num, value in enumerate(earnings_summary.columns):
+                    worksheet2.write(0, col_num, value, header_format)
+                    worksheet2.set_column(col_num, col_num, 20)
+                for row_num, row_data in earnings_summary.iterrows():
+                    for col_num, value in enumerate(row_data):
+                        worksheet2.write(row_num + 1, col_num, value if pd.notnull(value) else '', cell_format)
 
-                    for col_num, value in enumerate(earnings_summary.columns):
-                        worksheet2.write(0, col_num, value, header_format)
-                    for row_num, row_data in earnings_summary.iterrows():
-                        for col_num, value in enumerate(row_data):
-                            worksheet2.write(row_num + 1, col_num, value if pd.notnull(value) else '', cell_format)
-
-                # Export-Button für Excel-Datei
-                st.download_button(
-                    label="Suchergebnisse und Zusammenfassung als Excel herunterladen",
-                    data=output.getvalue(),
-                    file_name="Suchergebnisse_mit_Zusammenfassung.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                )
-            else:
-                st.warning("Keine Treffer gefunden.")
-        else:
-            missing_columns = [col for col in required_columns if col not in df.columns]
-            st.error(f"Die folgenden benötigten Spalten fehlen in der Datei: {', '.join(missing_columns)}")
-
+            st.download_button(
+                label="Suchergebnisse und Zusammenfassung als Excel herunterladen",
+                data=output.getvalue(),
+                file_name="Suchergebnisse_mit_Zusammenfassung.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
     except Exception as e:
         st.error(f"Fehler beim Verarbeiten der Datei: {e}")
 else:
