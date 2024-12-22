@@ -79,6 +79,9 @@ if uploaded_files:
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
                 final_results['KW'] = kalenderwoche  # KW zur Ergebnis-Tabelle hinzufügen
 
+                # Zeilen mit 0 oder NaN in "Verdienst" entfernen
+                final_results = final_results[final_results['Verdienst'] > 0].dropna()
+
                 # Ergebnisse sammeln
                 all_results.append(final_results)
                 summary = final_results.groupby(['KW', 'Nachname', 'Vorname'])['Verdienst'].sum().reset_index()
