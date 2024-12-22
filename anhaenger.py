@@ -84,6 +84,9 @@ if uploaded_file:
 
             final_results['Verdienst (€)'] = final_results['Kennzeichen'].astype(str).apply(calculate_earnings)
 
+            # NaN-Werte durch leere Strings oder Nullen ersetzen
+            final_results = final_results.fillna('')
+
             # Zusammenfassung des Verdienstes pro Fahrer
             earnings_summary = final_results.groupby(['Nachname', 'Vorname'], as_index=False)['Verdienst (€)'].sum()
             earnings_summary = earnings_summary.rename(columns={'Verdienst (€)': 'Gesamtverdienst (€)'})
@@ -146,13 +149,13 @@ if uploaded_file:
                         worksheet1.write(2, col_num, value, header_format)
                     for row_num, row_data in final_results.iterrows():
                         for col_num, value in enumerate(row_data):
-                            worksheet1.write(row_num + 3, col_num, value, cell_format)
+                            worksheet1.write(row_num + 3, col_num, value if pd.notnull(value) else '', cell_format)
 
                     for col_num, value in enumerate(earnings_summary.columns):
                         worksheet2.write(0, col_num, value, header_format)
                     for row_num, row_data in earnings_summary.iterrows():
                         for col_num, value in enumerate(row_data):
-                            worksheet2.write(row_num + 1, col_num, value, cell_format)
+                            worksheet2.write(row_num + 1, col_num, value if pd.notnull(value) else '', cell_format)
 
                 # Export-Button für Excel-Datei
                 st.download_button(
