@@ -19,29 +19,31 @@ def filter_tours(file):
     spalte_l = "Unnamed: 11" # Spalte L (Filterkriterium)
     spalte_o = "Unnamed: 14" # Spalte O (Filterkriterium)
 
+    # Bereinige die relevanten Spalten
+    df[spalte_l] = df[spalte_l].fillna("Unbekannt").astype(str).str.strip()
+    df[spalte_o] = df[spalte_o].fillna("Unbekannt").astype(str).str.strip().str.upper()
+
     # Debug: Inhalt der relevanten Spalten anzeigen
     st.write("Inhalt der Spalte L (erste 20 Werte):", df[spalte_l].head(20).tolist())
     st.write("Inhalt der Spalte O (erste 20 Werte):", df[spalte_o].head(20).tolist())
 
-    # Bereinige die relevanten Spalten
-    df[spalte_l] = df[spalte_l].astype(str).str.strip()
-    df[spalte_o] = df[spalte_o].astype(str).str.strip().str.upper()
+    # Entferne Zeilen mit nicht relevanten Werten
+    df = df[(df[spalte_l] != "0") & (df[spalte_o] != "0")]
 
     # Einzelne Filter prüfen
     filtered_by_l = df[df[spalte_l].isin(["602", "156", "620", "350", "520"])]
-    
     if filtered_by_l.empty:
-        st.error("Der DataFrame nach Filterung auf Spalte L ist leer.")
+        st.write("Nach Filter auf Spalte L ist der DataFrame leer.")
     else:
         st.write(f"Nach Filter auf Spalte L: {len(filtered_by_l)} Zeilen gefunden")
-        st.dataframe(filtered_by_l.head(10))
+        st.text(filtered_by_l.head(10).to_string())
 
     filtered_by_o = df[df[spalte_o].isin(["AZ", "MW"])]
     if filtered_by_o.empty:
-        st.error("Der DataFrame nach Filterung auf Spalte O ist leer.")
+        st.write("Nach Filter auf Spalte O ist der DataFrame leer.")
     else:
         st.write(f"Nach Filter auf Spalte O: {len(filtered_by_o)} Zeilen gefunden")
-        st.dataframe(filtered_by_o.head(10))
+        st.text(filtered_by_o.head(10).to_string())
 
     # Gesamte Filterung
     filtered_df = df[
