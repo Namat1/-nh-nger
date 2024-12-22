@@ -48,8 +48,9 @@ if uploaded_file:
             # Suche nach den Zeichenfolgen in 'Unnamed: 14'
             text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False)]
 
-            # Kombinieren der Suchergebnisse
+            # Kombinieren der Suchergebnisse und 607 ausschließen
             combined_results = pd.concat([number_matches, text_matches]).drop_duplicates()
+            combined_results = combined_results[combined_results['Unnamed: 11'] != "607"]
 
             # Nur die gewünschten Spalten extrahieren und umbenennen
             renamed_columns = {
