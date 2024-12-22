@@ -3,14 +3,26 @@ import pandas as pd
 from io import BytesIO
 
 def filter_tours(file):
-    # Excel-Datei einlesen (Formeln ignorieren, nur Werte übernehmen)
-    df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl")
+    # Excel-Datei einlesen
+    try:
+        df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl")
+    except ValueError as e:
+        st.error("Tabellenblatt 'Touren' konnte nicht gefunden werden. Überprüfen Sie die Datei.")
+        st.stop()
 
-    # Sicherstellen, dass alle Werte als Strings gelesen werden
+    # Spaltennamen bereinigen
+    df.columns = df.columns.str.strip()
+
+    # Prüfen, ob die benötigten Spalten vorhanden sind
+    required_columns = ['L', 'O', 'A', 'D', 'E', 'G', 'H']
+    missing_columns = [col for col in required_columns if col not in df.columns]
+
+    if missing_columns:
+        st.error(f"Die folgenden Spalten fehlen in der Datei: {', '.join(missing_columns)}")
+        st.stop()
+
+    # Sicherstellen, dass alle Werte Strings sind
     df = df.astype(str)
-
-    # Bereinigung von Leerzeichen und überflüssigem Whitespace
-    df = df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
 
     # Filterkriterien definieren
     numbers_to_search = ["602", "156", "620", "350", "520"]
@@ -67,4 +79,3 @@ if uploaded_file:
         file_name="Gefilterte_Touren.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
