@@ -4,22 +4,12 @@ from io import BytesIO
 
 def filter_tours(file):
     # Excel-Datei einlesen
-    try:
-        df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl")
-    except ValueError as e:
-        st.error("Tabellenblatt 'Touren' konnte nicht gefunden werden. Überprüfen Sie die Datei.")
-        st.stop()
-
-    # Zeige die ersten Zeilen und Spaltennamen für Debugging
-    st.write("Erste Zeilen der Datei:")
-    st.dataframe(df.head())
-    st.write("Gefundene Spalten:")
-    st.write(df.columns.tolist())
+    df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl")
 
     # Spaltennamen bereinigen
     df.columns = df.columns.str.strip()
 
-    # Sicherstellen, dass alle Werte Strings sind
+    # Sicherstellen, dass alle Werte als Strings gelesen werden
     df = df.astype(str)
 
     # Prüfen, ob die benötigten Spalten vorhanden sind
@@ -34,22 +24,8 @@ def filter_tours(file):
     numbers_to_search = ["602", "156", "620", "350", "520"]
     az_mw_values = ["AZ", "Az", "az", "MW", "Mw", "mw"]
 
-    # Debugging: Prüfe die Inhalte der relevanten Spalten
-    st.write("Beispielwerte aus Spalte 'L':")
-    st.write(df['L'].unique())
-    st.write("Beispielwerte aus Spalte 'O':")
-    st.write(df['O'].unique())
-
     # Zeilen filtern
-    try:
-        filtered_df = df[(df['L'].isin(numbers_to_search)) & (df['O'].isin(az_mw_values))]
-    except Exception as e:
-        st.error(f"Fehler beim Filtern der Zeilen: {e}")
-        st.stop()
-
-    # Debugging: Zeige gefilterte Daten
-    st.write("Gefilterte Daten:")
-    st.dataframe(filtered_df)
+    filtered_df = df[(df['L'].isin(numbers_to_search)) & (df['O'].isin(az_mw_values))]
 
     # Werte aus den relevanten Spalten holen
     result = []
@@ -83,15 +59,12 @@ uploaded_file = st.file_uploader("Laden Sie eine Excel-Datei hoch", type="xlsx")
 
 if uploaded_file:
     # Filterprozess starten
-    st.write("Datei erfolgreich hochgeladen. Verarbeite Daten...")
     filtered_data = filter_tours(uploaded_file)
 
     # Gefilterte Daten anzeigen
-    st.write("Gefilterte Touren:")
     st.dataframe(filtered_data)
 
     # Möglichkeit zum Download der Ergebnisse
-    st.write("Laden Sie die gefilterten Daten als Excel-Datei herunter:")
     excel_data = convert_df_to_excel(filtered_data)
     st.download_button(
         label="Download Excel Datei",
