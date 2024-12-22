@@ -70,8 +70,8 @@ if uploaded_file:
             }
             final_results = combined_results[required_columns].rename(columns=renamed_columns)
 
-            # Sortieren nach Nachname
-            final_results = final_results.sort_values(by=['Nachname'])
+            # Sortieren nach Nachname und Vorname
+            final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
 
             # Suchergebnisse anzeigen
             st.write("Suchergebnisse:")
