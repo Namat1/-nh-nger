@@ -81,8 +81,11 @@ if uploaded_file:
                 "350": 20,
                 "520": 20
             }
+
+            # Berechnung des Verdiensts
             final_results['Verdienst'] = final_results.apply(
-                lambda row: payment_mapping.get(row['Kennzeichen'], 0) if "AZ" in str(row['Art 2']).strip().upper() else 0,
+                lambda row: payment_mapping.get(row['Kennzeichen'], 0)
+                if "AZ" in str(row['Art 2']).strip().upper() else 0,
                 axis=1
             )
 
