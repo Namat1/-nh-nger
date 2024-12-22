@@ -77,38 +77,53 @@ if uploaded_file:
 
             final_results['Verdienst (€)'] = final_results['Kennzeichen'].astype(str).apply(calculate_earnings)
 
+            # Zusammenfassung des Verdienstes pro Fahrer
+            earnings_summary = final_results.groupby(['Nachname', 'Vorname'], as_index=False)['Verdienst (€)'].sum()
+            earnings_summary = earnings_summary.rename(columns={'Verdienst (€)': 'Gesamtverdienst (€)'})
+
             # Sortieren nach Nachname
             final_results = final_results.sort_values(by=['Nachname'])
+            earnings_summary = earnings_summary.sort_values(by=['Nachname'])
 
             # Suchergebnisse anzeigen
             st.write("Suchergebnisse mit Verdienst:")
             if not final_results.empty:
                 st.dataframe(final_results)
+                st.write("Zusammenfassung des Verdienstes pro Fahrer:")
+                st.dataframe(earnings_summary)
 
                 # Export in Excel-Datei
                 output = BytesIO()
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                     # Schreibe Kalenderwoche in die erste Zeile
                     workbook = writer.book
-                    worksheet = workbook.add_worksheet("Suchergebnisse")
-                    writer.sheets["Suchergebnisse"] = worksheet
+                    worksheet1 = workbook.add_worksheet("Suchergebnisse")
+                    worksheet2 = workbook.add_worksheet("Zusammenfassung")
+
+                    writer.sheets["Suchergebnisse"] = worksheet1
+                    writer.sheets["Zusammenfassung"] = worksheet2
 
                     # Kalenderwoche in die erste Zeile schreiben
-                    worksheet.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
+                    worksheet1.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
 
                     # Schreibe die Daten ab der zweiten Zeile
                     final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
+                    earnings_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=0)
 
                     # Lesbarkeit verbessern
                     for i, column in enumerate(final_results.columns):
                         column_width = max(final_results[column].astype(str).map(len).max(), len(column))
-                        worksheet.set_column(i, i, column_width)
+                        worksheet1.set_column(i, i, column_width)
+
+                    for i, column in enumerate(earnings_summary.columns):
+                        column_width = max(earnings_summary[column].astype(str).map(len).max(), len(column))
+                        worksheet2.set_column(i, i, column_width)
 
                 # Export-Button für Excel-Datei
                 st.download_button(
-                    label="Suchergebnisse als Excel herunterladen",
+                    label="Suchergebnisse und Zusammenfassung als Excel herunterladen",
                     data=output.getvalue(),
-                    file_name="Suchergebnisse.xlsx",
+                    file_name="Suchergebnisse_mit_Zusammenfassung.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
             else:
