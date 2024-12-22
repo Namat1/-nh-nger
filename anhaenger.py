@@ -42,16 +42,20 @@ if uploaded_file:
                             'Unnamed: 7', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
 
         if all(col in df.columns for col in required_columns):
+            # Sicherstellen, dass die relevanten Spalten Strings sind
+            df['Unnamed: 11'] = df['Unnamed: 11'].astype(str)
+            df['Unnamed: 14'] = df['Unnamed: 14'].astype(str)
+
             # Suche nach den Zahlen in 'Unnamed: 11', wobei 607 vollständig ausgeschlossen wird
             number_matches = df[
-                df['Unnamed: 11'].astype(str).isin(search_numbers) & 
-                (df['Unnamed: 11'].astype(str) != "607")
+                df['Unnamed: 11'].isin(search_numbers) & 
+                (df['Unnamed: 11'] != "607")
             ]
 
             # Suche nach den Zeichenfolgen in 'Unnamed: 14', wobei Zeilen mit 607 ausgeschlossen werden
             text_matches = df[
                 df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) &
-                (df['Unnamed: 11'].astype(str) != "607")
+                (df['Unnamed: 11'] != "607")
             ]
 
             # Kombinieren der Suchergebnisse
@@ -87,11 +91,14 @@ if uploaded_file:
             }
 
             # Berechnung des Verdiensts
-            final_results['Verdienst'] = final_results.apply(
-                lambda row: payment_mapping.get(row['Kennzeichen'], 0)
-                if "AZ" in str(row['Art 2']).strip().upper() else 0,
-                axis=1
-            )
+            def calculate_payment(row):
+                kennzeichen = row['Kennzeichen']
+                art_2 = row['Art 2'].strip().upper()
+                if kennzeichen in payment_mapping and art_2 == "AZ":
+                    return payment_mapping[kennzeichen]
+                return 0
+
+            final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
 
             # Debugging-Ausgabe: Zeige Zeilen mit berechnetem Verdienst
             st.write("Zeilen mit berechnetem Verdienst:")
