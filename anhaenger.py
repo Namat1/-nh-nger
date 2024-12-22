@@ -67,17 +67,13 @@ if uploaded_file:
             }
             final_results = combined_results[required_columns].rename(columns=renamed_columns)
 
-            # Daten umstrukturieren: Namen als Spalten, Touren als Zeilen
-            final_pivot = final_results.pivot_table(
-                index='Tour',
-                values=['Nachname', 'Vorname', 'Nachname 2', 'Vorname 2'],
-                aggfunc=lambda x: ' | '.join(x.dropna().unique())
-            ).reset_index()
+            # Sortieren nach Nachname
+            final_results = final_results.sort_values(by=['Nachname'])
 
             # Suchergebnisse anzeigen
-            st.write("Suchergebnisse (umstrukturierte Ansicht):")
-            if not final_pivot.empty:
-                st.dataframe(final_pivot)
+            st.write("Suchergebnisse:")
+            if not final_results.empty:
+                st.dataframe(final_results)
 
                 # Export in Excel-Datei
                 output = BytesIO()
@@ -91,11 +87,11 @@ if uploaded_file:
                     worksheet.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
 
                     # Schreibe die Daten ab der zweiten Zeile
-                    final_pivot.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
+                    final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
 
                     # Lesbarkeit verbessern
-                    for i, column in enumerate(final_pivot.columns):
-                        column_width = max(final_pivot[column].astype(str).map(len).max(), len(column))
+                    for i, column in enumerate(final_results.columns):
+                        column_width = max(final_results[column].astype(str).map(len).max(), len(column))
                         worksheet.set_column(i, i, column_width)
 
                 # Export-Button für Excel-Datei
