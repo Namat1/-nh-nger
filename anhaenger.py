@@ -124,17 +124,46 @@ if uploaded_file:
                     writer.sheets["Suchergebnisse"] = worksheet
                     worksheet.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
                     final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
-                    for i, column in enumerate(final_results.columns):
-                        column_width = max(final_results[column].astype(str).map(len).max(), len(column))
-                        worksheet.set_column(i, i, column_width)
+
+                    # Formatierungen anwenden
+                    header_format = workbook.add_format({
+                        'bold': True,
+                        'text_wrap': True,
+                        'valign': 'middle',
+                        'align': 'center',
+                        'fg_color': '#D7E4BC',
+                        'border': 1
+                    })
+
+                    cell_format = workbook.add_format({
+                        'text_wrap': True,
+                        'valign': 'top',
+                        'border': 1
+                    })
+
+                    verdienst_format = workbook.add_format({
+                        'num_format': '0 €',
+                        'bold': True,
+                        'fg_color': '#FFEB9C',
+                        'border': 1
+                    })
+
+                    for col_num, value in enumerate(final_results.columns):
+                        worksheet.write(2, col_num, value, header_format)
+                        worksheet.set_column(col_num, col_num, 15, cell_format)
+
+                    for row_num, verdienst in enumerate(final_results['Verdienst'], start=3):
+                        worksheet.write(row_num, len(final_results.columns) - 1, verdienst, verdienst_format)
 
                     # Blatt mit Zusammenfassung
                     summary_worksheet = workbook.add_worksheet("Zusammenfassung")
                     writer.sheets["Zusammenfassung"] = summary_worksheet
                     summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=0)
-                    for i, column in enumerate(summary.columns):
-                        column_width = max(summary[column].astype(str).map(len).max(), len(column))
-                        summary_worksheet.set_column(i, i, column_width)
+
+                    # Formatierungen für Zusammenfassung
+                    for col_num, value in enumerate(summary.columns):
+                        summary_worksheet.write(0, col_num, value, header_format)
+                        summary_worksheet.set_column(col_num, col_num, 15, cell_format)
 
                 # Export-Button für Excel-Datei
                 st.download_button(
