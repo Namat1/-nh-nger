@@ -3,9 +3,14 @@ import pandas as pd
 from io import BytesIO
 import re
 
+# Funktion, um verbundene Zellen aufzufüllen
+def fill_merged_cells(df, column_name):
+    filled_column = df[column_name].ffill()
+    return filled_column
+
 # Titel der App
 st.title("Touren-Such-App")
-st.write("Lade eine Datei hoch, und die Daten werden in den Spalten `Unnamed: 11` und `Unnamed: 14` automatisch durchsucht.")
+st.write("Lade eine Datei hoch, und die Daten werden verarbeitet. Verknüpfte Zellen (z. B. Datum) werden korrekt zugeordnet.")
 
 # Datei-Upload
 uploaded_file = st.file_uploader("Lade deine Excel- oder CSV-Datei hoch", type=["xlsx", "xls", "csv"])
@@ -34,12 +39,16 @@ if uploaded_file:
         st.write("Originaldaten:")
         st.dataframe(df)
 
+        # Fülle verbundene Zellen (z. B. Datum)
+        if "Datum" in df.columns:
+            df["Datum"] = fill_merged_cells(df, "Datum")
+
         # **Automatische Suchoptionen**
         search_numbers = ["602", "620", "350", "520", "156"]  # Zahlen, nach denen in 'Unnamed: 11' gesucht wird
         search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]  # Zeichenfolgen, nach denen in 'Unnamed: 14' gesucht wird
 
         # Prüfen, ob die Spalten vorhanden sind
-        required_columns = ['Unnamed: 0', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 6',
+        required_columns = ['Datum', 'Unnamed: 0', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 6',
                             'Unnamed: 7', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
 
         if all(col in df.columns for col in required_columns):
@@ -54,6 +63,7 @@ if uploaded_file:
 
             # Nur die gewünschten Spalten extrahieren und umbenennen
             renamed_columns = {
+                'Datum': 'Datum',
                 'Unnamed: 0': 'Tour',
                 'Unnamed: 3': 'Nachname',
                 'Unnamed: 4': 'Vorname',
@@ -81,7 +91,7 @@ if uploaded_file:
                     # Kalenderwoche in die erste Zeile schreiben
                     worksheet.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
 
-                    # Schreibe die Daten ab der zweiten Zeile
+                    # Schreibe die Daten ab der dritten Zeile
                     final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
 
                     # Lesbarkeit verbessern
