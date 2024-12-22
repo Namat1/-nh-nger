@@ -4,17 +4,28 @@ from io import BytesIO
 
 def filter_tours(file):
     # Excel-Datei einlesen
-    df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl", header=0)
+    df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl")
 
     # Spaltennamen bereinigen
-    df.columns = df.columns.str.strip()  # Entfernt führende/nachfolgende Leerzeichen
-    df.columns = df.columns.str.replace(r"\s+", " ", regex=True)  # Ersetzt mehrfachen Leerraum
-    df.columns = df.columns.str.lower()  # Macht alle Spaltennamen kleinbuchstabig
+    df.columns = df.columns.str.strip()  # Entfernt Leerzeichen
+    df.columns = df.columns.str.lower()  # Wandelt in Kleinbuchstaben um
 
-    # Erwartete Spaltennamen (nach Bereinigung)
+    # Manuelle Zuordnung der Spaltennamen
+    column_mapping = {
+        "l": "l",
+        "o": "o",
+        "a": "a",
+        "d": "d",
+        "e": "e",
+        "g": "g",
+        "h": "h"
+    }
+
+    # Spalten zuordnen
+    df = df.rename(columns=lambda x: column_mapping.get(x, x))
+
+    # Erwartete Spalten überprüfen
     required_columns = ['l', 'o', 'a', 'd', 'e', 'g', 'h']
-
-    # Prüfen, ob die bereinigten Spalten vorhanden sind
     missing_columns = [col for col in required_columns if col not in df.columns]
 
     if missing_columns:
