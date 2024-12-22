@@ -2,70 +2,36 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-def filter_tours(file):
-    # Excel-Datei einlesen (Header ab Zeile 5)
+def analyze_and_display(file):
+    # Excel-Datei einlesen (Header ab Zeile 5, da die relevanten Daten dort beginnen)
     df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl", header=4)
 
-    # Spalten explizit zuordnen basierend auf ihrem Index
-    df['A'] = df.iloc[:, 0]  # Spalte A (1. Spalte)
-    df['L'] = df.iloc[:, 12]  # Spalte M (13. Spalte)
-    df['O'] = df.iloc[:, 14]  # Spalte O (15. Spalte)
+    # Spalten anzeigen
+    st.write("Gefundene Spalten:")
+    st.write(df.columns.tolist())
 
-    # Spalten bereinigen
-    df['L'] = df['L'].astype(str).str.strip()
-    df['O'] = df['O'].astype(str).str.strip().str.upper()
+    # Erstelle eine Tabelle mit Spaltenpositionen und Beispielwerten
+    column_analysis = pd.DataFrame({
+        "Spaltenname": df.columns,
+        "Spaltenposition (Excel)": [chr(65 + i) for i in range(len(df.columns))],
+        "Erster Wert (Zeile 6)": df.iloc[0].tolist()
+    })
 
-    # Filterkriterien definieren
-    numbers_to_search = ["602", "156", "620", "350", "520"]
-    az_mw_values = ["AZ"]
+    # Analysedaten anzeigen
+    st.write("Analyse der Spalten:")
+    st.dataframe(column_analysis)
 
-    # Zeilen filtern
-    filtered_df = df[(df['L'].isin(numbers_to_search)) & (df['O'].isin(az_mw_values))]
-    st.write("Gefilterte Daten:")
-    st.dataframe(filtered_df)
+    # Zeige die ersten Zeilen des DataFrames
+    st.write("Erste 10 Zeilen der Daten:")
+    st.dataframe(df.head(10))
 
-    # Werte aus den relevanten Spalten holen
-    result = []
-    for _, row in filtered_df.iterrows():
-        tour = row['A']
-        if pd.notna(row['D']) and pd.notna(row['E']):
-            name = f"{row['D']} {row['E']}"
-        elif pd.notna(row['G']) and pd.notna(row['H']):
-            name = f"{row['G']} {row['H']}"
-        else:
-            name = "Unbekannt"
-
-        result.append([tour, name])
-
-    # Neue Tabelle erstellen
-    result_df = pd.DataFrame(result, columns=["Tournummer", "Name"])
-    return result_df
-
-def convert_df_to_excel(df):
-    # DataFrame in eine Excel-Datei umwandeln
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='Gefilterte Touren')
-    processed_data = output.getvalue()
-    return processed_data
+    return df
 
 # Streamlit App
-st.title("Touren Filter und Export")
+st.title("Analyse der Excel-Daten")
 
 uploaded_file = st.file_uploader("Laden Sie eine Excel-Datei hoch", type="xlsx")
 
 if uploaded_file:
-    st.write("Datei erfolgreich hochgeladen. Verarbeite Daten...")
-    filtered_data = filter_tours(uploaded_file)
-
-    # Gefilterte Daten anzeigen
-    st.dataframe(filtered_data)
-
-    # Möglichkeit zum Download der Ergebnisse
-    excel_data = convert_df_to_excel(filtered_data)
-    st.download_button(
-        label="Download Excel Datei",
-        data=excel_data,
-        file_name="Gefilterte_Touren.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    st.write("Datei erfolgreich hochgeladen. Analysiere Daten...")
+    df = analyze_and_display(uploaded_file)
