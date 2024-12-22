@@ -5,7 +5,7 @@ import re
 
 # Titel der App
 st.title("Touren-Such-App")
-st.write("Lade eine Datei hoch, und die Daten werden in den Spalten `Unnamed: 11` und `Unnamed: 14` automatisch durchsucht.")
+
 
 # Datei-Upload
 uploaded_file = st.file_uploader("Lade deine Excel- oder CSV-Datei hoch", type=["xlsx", "xls", "csv"])
