@@ -124,27 +124,40 @@ if uploaded_files:
         st.dataframe(combined_summary)
 
         # Ergebnisse in eine Excel-Datei exportieren
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            # Suchergebnisse
-            workbook = writer.book
-            worksheet = workbook.add_worksheet("Suchergebnisse")
-            writer.sheets["Suchergebnisse"] = worksheet
-            worksheet.write(0, 0, "Kombinierte Suchergebnisse")
-            final_output_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
-            for col_idx, column_name in enumerate(final_output_results.columns):
-                col_width = max(final_output_results[column_name].astype(str).map(len).max(), len(column_name))
-                worksheet.set_column(col_idx, col_idx, col_width)
+output = BytesIO()
+with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+    # Suchergebnisse
+    workbook = writer.book
+    worksheet = workbook.add_worksheet("Suchergebnisse")
+    writer.sheets["Suchergebnisse"] = worksheet
 
-            # Zusammenfassung nach KW
-            for kw in combined_summary['KW'].unique():
-                summary_by_kw = combined_summary[combined_summary['KW'] == kw]
-                summary_worksheet = workbook.add_worksheet(f"Zusammenfassung_{kw}")
-                writer.sheets[f"Zusammenfassung_{kw}"] = summary_worksheet
-                summary_by_kw.to_excel(writer, index=False, sheet_name=f"Zusammenfassung_{kw}", startrow=0)
-                for col_idx, column_name in enumerate(summary_by_kw.columns):
-                    col_width = max(summary_by_kw[column_name].astype(str).map(len).max(), len(column_name))
-                    summary_worksheet.set_column(col_idx, col_idx, col_width)
+    # Entfernen unerwünschter Spalten
+    columns_to_drop = [col for col in ['Datei', 'Art'] if col in combined_results.columns]
+    final_output_results = combined_results.drop(columns=columns_to_drop)
+
+    # Schreiben der kombinierten Suchergebnisse
+    worksheet.write(0, 0, "Kombinierte Suchergebnisse")
+    final_output_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
+
+    # Auto-Größe der Spalten in "Suchergebnisse"
+    for col_idx, column_name in enumerate(final_output_results.columns):
+        col_width = max(final_output_results[column_name].astype(str).map(len).max(), len(column_name))
+        worksheet.set_column(col_idx, col_idx, col_width)
+
+    # Zusammenfassung nach KW
+    for kw in combined_summary['KW'].unique():
+        summary_by_kw = combined_summary[combined_summary['KW'] == kw]
+        summary_worksheet = workbook.add_worksheet(f"Zusammenfassung_{kw}")
+        writer.sheets[f"Zusammenfassung_{kw}"] = summary_worksheet
+
+        # Schreiben der zusammengefassten Daten für jede KW
+        summary_by_kw.to_excel(writer, index=False, sheet_name=f"Zusammenfassung_{kw}", startrow=0)
+
+        # Auto-Größe der Spalten in den Zusammenfassungen
+        for col_idx, column_name in enumerate(summary_by_kw.columns):
+            col_width = max(summary_by_kw[column_name].astype(str).map(len).max(), len(column_name))
+            summary_worksheet.set_column(col_idx, col_idx, col_width)
+
 
         # Download-Button
         st.download_button(
