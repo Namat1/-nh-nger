@@ -67,10 +67,6 @@ if uploaded_files:
                 }
                 final_results = combined_results[required_columns].rename(columns=renamed_columns)
 
-                # Debug: Zeige Zwischenergebnisse vor der Berechnung
-                st.write("Zwischenergebnisse vor der Verdienstberechnung:")
-                st.dataframe(final_results)
-
                 # Sortieren und Verdienst berechnen
                 final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
                 payment_mapping = {"602": 40, "156": 40, "620": 20, "350": 20, "520": 20}
@@ -81,19 +77,10 @@ if uploaded_files:
                     return payment_mapping.get(kennzeichen, 0) if art_2 == "AZ" else 0
 
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
-
-                # Debug: Zeige Zwischenergebnisse nach der Verdienstberechnung
-                st.write("Zwischenergebnisse nach der Verdienstberechnung:")
-                st.dataframe(final_results)
-
                 final_results['KW'] = kalenderwoche  # KW zur Ergebnis-Tabelle hinzufügen
 
                 # Zeilen mit 0 oder NaN in "Verdienst" entfernen
                 final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
-
-                # Debug: Zeige gefilterte Ergebnisse
-                st.write("Gefilterte Ergebnisse (keine 0 oder NaN):")
-                st.dataframe(final_results)
 
                 # Ergebnisse sammeln
                 all_results.append(final_results)
@@ -124,40 +111,33 @@ if uploaded_files:
         st.dataframe(combined_summary)
 
         # Ergebnisse in eine Excel-Datei exportieren
-output = BytesIO()
-with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-    # Suchergebnisse
-    workbook = writer.book
-    worksheet = workbook.add_worksheet("Suchergebnisse")
-    writer.sheets["Suchergebnisse"] = worksheet
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            # Suchergebnisse
+            workbook = writer.book
+            worksheet = workbook.add_worksheet("Suchergebnisse")
+            writer.sheets["Suchergebnisse"] = worksheet
+            worksheet.write(0, 0, "Kombinierte Suchergebnisse")
+            final_output_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
 
-    # Entfernen unerwünschter Spalten
-    columns_to_drop = [col for col in ['Datei', 'Art'] if col in combined_results.columns]
-    final_output_results = combined_results.drop(columns=columns_to_drop)
+            # Auto-Größe der Spalten in "Suchergebnisse"
+            for col_idx, column_name in enumerate(final_output_results.columns):
+                col_width = max(final_output_results[column_name].astype(str).map(len).max(), len(column_name))
+                worksheet.set_column(col_idx, col_idx, col_width)
 
-    # Schreiben der kombinierten Suchergebnisse
-    worksheet.write(0, 0, "Kombinierte Suchergebnisse")
-    final_output_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
+            # Zusammenfassung nach KW
+            for kw in combined_summary['KW'].unique():
+                summary_by_kw = combined_summary[combined_summary['KW'] == kw]
+                summary_worksheet = workbook.add_worksheet(f"Zusammenfassung_{kw}")
+                writer.sheets[f"Zusammenfassung_{kw}"] = summary_worksheet
 
-    # Auto-Größe der Spalten in "Suchergebnisse"
-    for col_idx, column_name in enumerate(final_output_results.columns):
-        col_width = max(final_output_results[column_name].astype(str).map(len).max(), len(column_name))
-        worksheet.set_column(col_idx, col_idx, col_width)
+                # Schreiben der zusammengefassten Daten für jede KW
+                summary_by_kw.to_excel(writer, index=False, sheet_name=f"Zusammenfassung_{kw}", startrow=0)
 
-    # Zusammenfassung nach KW
-    for kw in combined_summary['KW'].unique():
-        summary_by_kw = combined_summary[combined_summary['KW'] == kw]
-        summary_worksheet = workbook.add_worksheet(f"Zusammenfassung_{kw}")
-        writer.sheets[f"Zusammenfassung_{kw}"] = summary_worksheet
-
-        # Schreiben der zusammengefassten Daten für jede KW
-        summary_by_kw.to_excel(writer, index=False, sheet_name=f"Zusammenfassung_{kw}", startrow=0)
-
-        # Auto-Größe der Spalten in den Zusammenfassungen
-        for col_idx, column_name in enumerate(summary_by_kw.columns):
-            col_width = max(summary_by_kw[column_name].astype(str).map(len).max(), len(column_name))
-            summary_worksheet.set_column(col_idx, col_idx, col_width)
-
+                # Auto-Größe der Spalten in den Zusammenfassungen
+                for col_idx, column_name in enumerate(summary_by_kw.columns):
+                    col_width = max(summary_by_kw[column_name].astype(str).map(len).max(), len(column_name))
+                    summary_worksheet.set_column(col_idx, col_idx, col_width)
 
         # Download-Button
         st.download_button(
