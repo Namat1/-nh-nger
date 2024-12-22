@@ -119,14 +119,22 @@ if uploaded_file:
                     # Schreibe Kalenderwoche in die erste Zeile
                     workbook = writer.book
 
-                    # Blatt mit Suchergebnissen
-                    worksheet = workbook.add_worksheet("Suchergebnisse")
-                    writer.sheets["Suchergebnisse"] = worksheet
-                    worksheet.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
-                    final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
-                    for i, column in enumerate(final_results.columns):
-                        column_width = max(final_results[column].astype(str).map(len).max(), len(column))
-                        worksheet.set_column(i, i, column_width)
+                   # Erstellen des Arbeitsblatts für Suchergebnisse
+worksheet = workbook.add_worksheet("Suchergebnisse")
+writer.sheets["Suchergebnisse"] = worksheet
+
+# Kalenderwoche hinzufügen
+worksheet.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
+
+# Daten in das Arbeitsblatt schreiben
+final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
+
+# Spaltenbreiten dynamisch anpassen
+for col_idx, column_name in enumerate(final_results.columns):
+    max_content_width = final_results[column_name].astype(str).map(len).max()
+    column_width = max(max_content_width, len(column_name))
+    worksheet.set_column(col_idx, col_idx, column_width)
+
 
                     # Blatt mit Zusammenfassung
                     summary_worksheet = workbook.add_worksheet("Zusammenfassung")
