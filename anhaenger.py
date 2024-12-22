@@ -11,7 +11,7 @@ uploaded_file = st.file_uploader("Lade deine Excel- oder CSV-Datei hoch", type=[
 
 if uploaded_file:
     try:
-        # Extrahiere den Dateinamen
+        # Dateiname extrahieren
         file_name = uploaded_file.name
         st.write(f"Hochgeladene Datei: {file_name}")
 
@@ -19,49 +19,43 @@ if uploaded_file:
         kw_match = re.search(r'KW(\d{1,2})', file_name, re.IGNORECASE)
         kalenderwoche = f"KW{kw_match.group(1)}" if kw_match else "Keine KW gefunden"
 
-        # Prüfen, ob die Datei Excel oder CSV ist
-        if uploaded_file.name.endswith('.xlsx') or uploaded_file.name.endswith('.xls'):
-            # Excel-Datei laden und Blatt 'Touren' lesen
+        # Datei lesen
+        if uploaded_file.name.endswith(('.xlsx', '.xls')):
             df = pd.read_excel(uploaded_file, sheet_name="Touren")
             st.success("Das Blatt 'Touren' wurde erfolgreich geladen!")
         else:
-            # CSV-Datei laden
             df = pd.read_csv(uploaded_file)
             st.success("CSV-Datei wurde erfolgreich geladen!")
 
-        # Anzeige der ursprünglichen Daten
+        # Ursprüngliche Daten anzeigen
         st.write("Originaldaten:")
         st.dataframe(df)
 
-        # **Automatische Suchoptionen**
-        search_numbers = ["602", "620", "350", "520", "156"]  # Zahlen, nach denen in 'Unnamed: 11' gesucht wird
-        search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]  # Zeichenfolgen, nach denen in 'Unnamed: 14' gesucht wird
+        # Automatische Suchoptionen
+        search_numbers = ["602", "620", "350", "520", "156"]
+        search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]
 
-        # Prüfen, ob die Spalten vorhanden sind
+        # Benötigte Spalten prüfen
         required_columns = ['Unnamed: 0', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 6',
                             'Unnamed: 7', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
 
         if all(col in df.columns for col in required_columns):
-            # Sicherstellen, dass die relevanten Spalten Strings sind
+            # Spalten als Strings behandeln
             df['Unnamed: 11'] = df['Unnamed: 11'].astype(str)
             df['Unnamed: 14'] = df['Unnamed: 14'].astype(str)
 
-            # Suche nach den Zahlen in 'Unnamed: 11', wobei 607 vollständig ausgeschlossen wird
+            # Filter nach Suchoptionen
             number_matches = df[
                 df['Unnamed: 11'].isin(search_numbers) & 
                 (df['Unnamed: 11'] != "607")
             ]
-
-            # Suche nach den Zeichenfolgen in 'Unnamed: 14', wobei Zeilen mit 607 ausgeschlossen werden
             text_matches = df[
                 df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) &
                 (df['Unnamed: 11'] != "607")
             ]
-
-            # Kombinieren der Suchergebnisse
             combined_results = pd.concat([number_matches, text_matches]).drop_duplicates()
 
-            # Nur die gewünschten Spalten extrahieren und umbenennen
+            # Spalten extrahieren und umbenennen
             renamed_columns = {
                 'Unnamed: 0': 'Tour',
                 'Unnamed: 3': 'Nachname',
@@ -74,88 +68,59 @@ if uploaded_file:
             }
             final_results = combined_results[required_columns].rename(columns=renamed_columns)
 
-            # Debugging-Ausgabe: Zeige relevante Spalten zur Überprüfung
-            st.write("Debugging-Daten:")
-            st.write(final_results[['Kennzeichen', 'Art 2']])
-
-            # Sortieren nach Nachname und Vorname
+            # Sortieren und Verdienst berechnen
             final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
+            payment_mapping = {"602": 40, "156": 40, "620": 20, "350": 20, "520": 20}
 
-            # Verdienstberechnung nur für Kennzeichen in Verbindung mit AZ
-            payment_mapping = {
-                "602": 40,
-                "156": 40,
-                "620": 20,
-                "350": 20,
-                "520": 20
-            }
-
-            # Berechnung des Verdiensts
             def calculate_payment(row):
                 kennzeichen = row['Kennzeichen']
                 art_2 = row['Art 2'].strip().upper()
-                if kennzeichen in payment_mapping and art_2 == "AZ":
-                    return payment_mapping[kennzeichen]
-                return 0
+                return payment_mapping.get(kennzeichen, 0) if art_2 == "AZ" else 0
 
             final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
 
-            # Debugging-Ausgabe: Zeige Zeilen mit berechnetem Verdienst
-            st.write("Zeilen mit berechnetem Verdienst:")
-            st.write(final_results[final_results['Verdienst'] > 0])
-
-            # Tabellarische Zusammenfassung
+            # Zusammenfassung erstellen
             summary = final_results.groupby(['Nachname', 'Vorname'])['Verdienst'].sum().reset_index()
             summary = summary.rename(columns={"Verdienst": "Gesamtverdienst"})
 
-            # Suchergebnisse anzeigen
+            # Ergebnisse anzeigen
             st.write("Suchergebnisse:")
-            if not final_results.empty:
-                st.dataframe(final_results)
+            st.dataframe(final_results)
 
-                # Export in Excel-Datei
-                output = BytesIO()
-                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    # Schreibe Kalenderwoche in die erste Zeile
-                    workbook = writer.book
+            st.write("Zusammenfassung:")
+            st.dataframe(summary)
 
-                   # Erstellen des Arbeitsblatts für Suchergebnisse
-worksheet = workbook.add_worksheet("Suchergebnisse")
-writer.sheets["Suchergebnisse"] = worksheet
+            # Ergebnisse in Excel exportieren
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                # Suchergebnisse
+                workbook = writer.book
+                worksheet = workbook.add_worksheet("Suchergebnisse")
+                writer.sheets["Suchergebnisse"] = worksheet
+                worksheet.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
+                final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
+                for col_idx, column_name in enumerate(final_results.columns):
+                    col_width = max(final_results[column_name].astype(str).map(len).max(), len(column_name))
+                    worksheet.set_column(col_idx, col_idx, col_width)
 
-# Kalenderwoche hinzufügen
-worksheet.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
+                # Zusammenfassung
+                summary_worksheet = workbook.add_worksheet("Zusammenfassung")
+                writer.sheets["Zusammenfassung"] = summary_worksheet
+                summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=0)
+                for col_idx, column_name in enumerate(summary.columns):
+                    col_width = max(summary[column_name].astype(str).map(len).max(), len(column_name))
+                    summary_worksheet.set_column(col_idx, col_idx, col_width)
 
-# Daten in das Arbeitsblatt schreiben
-final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
-
-# Spaltenbreiten dynamisch anpassen
-for col_idx, column_name in enumerate(final_results.columns):
-    max_content_width = final_results[column_name].astype(str).map(len).max()
-    column_width = max(max_content_width, len(column_name))
-    worksheet.set_column(col_idx, col_idx, column_width)
-
-
-                    # Blatt mit Zusammenfassung
-                    summary_worksheet = workbook.add_worksheet("Zusammenfassung")
-                    writer.sheets["Zusammenfassung"] = summary_worksheet
-                    summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=0)
-                    for i, column in enumerate(summary.columns):
-                        column_width = max(summary[column].astype(str).map(len).max(), len(column))
-                        summary_worksheet.set_column(i, i, column_width)
-
-                # Export-Button für Excel-Datei
-                st.download_button(
-                    label="Suchergebnisse und Zusammenfassung als Excel herunterladen",
-                    data=output.getvalue(),
-                    file_name="Suchergebnisse_mit_Zusammenfassung.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                )
-            else:
-                st.warning("Keine Treffer gefunden.")
+            # Download-Button
+            st.download_button(
+                label="Suchergebnisse und Zusammenfassung als Excel herunterladen",
+                data=output.getvalue(),
+                file_name="Suchergebnisse_mit_Zusammenfassung.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
         else:
             missing_columns = [col for col in required_columns if col not in df.columns]
-            st.error(f"Die folgenden benötigten Spalten fehlen in der Datei: {', '.join(missing_columns)}")
+            st.error(f"Die folgenden Spalten fehlen: {', '.join(missing_columns)}")
 
     except Exception as e:
         st.error(f"Fehler beim Verarbeiten der Datei: {e}")
