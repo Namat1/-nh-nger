@@ -3,25 +3,30 @@ import pandas as pd
 from io import BytesIO
 
 def filter_tours(file):
-    # Excel-Datei einlesen
+    # Excel-Datei einlesen (Header anpassen, falls erforderlich)
     try:
-        df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl", header=0)
+        df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl", header=2)  # Passe 'header' an
     except Exception as e:
         st.error(f"Fehler beim Einlesen der Datei: {e}")
         st.stop()
 
-    # Spalten anzeigen (zur Prüfung der Struktur)
+    # Spaltenüberschriften überprüfen
     st.write("Gefundene Spalten:", df.columns.tolist())
 
-    # Spaltennamen bereinigen
-    df.columns = df.columns.str.strip()  # Entfernt Leerzeichen
-    df.columns = df.columns.str.lower()  # Wandelt Spaltennamen in Kleinbuchstaben um
+    # Manuelle Zuordnung der Spaltennamen (Anpassen basierend auf den tatsächlichen Spalten)
+    column_mapping = {
+        "Tour 3": "a",  # Tournummer
+        "Sonntag - Samstag": "l",  # Nummern
+        "km lt. Planung": "o",  # Filterspalte
+        "Arbeitszeit": "d",  # Arbeitszeit
+        # Füge weitere Zuordnungen hinzu, falls nötig
+    }
+    df = df.rename(columns=column_mapping)
 
     # Erwartete Spalten
     required_columns = ['l', 'o', 'a', 'd', 'e', 'g', 'h']
-
-    # Fehlende Spalten prüfen
     missing_columns = [col for col in required_columns if col not in df.columns]
+
     if missing_columns:
         st.error(f"Die folgenden Spalten fehlen in der Datei: {', '.join(missing_columns)}")
         st.stop()
@@ -65,9 +70,8 @@ uploaded_file = st.file_uploader("Laden Sie eine Excel-Datei hoch", type="xlsx")
 
 if uploaded_file:
     st.write("Datei erfolgreich hochgeladen. Überprüfe Struktur der Daten...")
-    df_preview = pd.read_excel(uploaded_file, sheet_name="Touren", engine="openpyxl").head(10)
-    st.write("Erste Zeilen der Datei:")
-    st.dataframe(df_preview)
+    df_preview = pd.read_excel(uploaded_file, sheet_name="Touren", engine="openpyxl", header=2)  # Passe 'header' an
+    st.dataframe(df_preview.head(10))
 
     # Filterprozess starten
     filtered_data = filter_tours(uploaded_file)
