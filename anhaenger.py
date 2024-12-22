@@ -63,7 +63,6 @@ if uploaded_files:
                     'Unnamed: 6': 'Nachname 2',
                     'Unnamed: 7': 'Vorname 2',
                     'Unnamed: 11': 'Kennzeichen',
-                    'Unnamed: 12': 'Art',
                     'Unnamed: 14': 'Art 2'
                 }
                 final_results = combined_results[required_columns].rename(columns=renamed_columns)
@@ -80,13 +79,10 @@ if uploaded_files:
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
                 final_results['KW'] = kalenderwoche  # KW zur Ergebnis-Tabelle hinzufügen
 
-                # Zusammenfassung erstellen
+                # Ergebnisse sammeln
+                all_results.append(final_results)
                 summary = final_results.groupby(['KW', 'Nachname', 'Vorname'])['Verdienst'].sum().reset_index()
                 summary = summary.rename(columns={"Verdienst": "Gesamtverdienst"})
-
-                # Ergebnisse sammeln
-                final_results['Datei'] = file_name  # Quelle der Datei hinzufügen
-                all_results.append(final_results)
                 all_summaries.append(summary)
             else:
                 missing_columns = [col for col in required_columns if col not in df.columns]
@@ -98,6 +94,8 @@ if uploaded_files:
     # Gesamtergebnisse zusammenführen
     if all_results:
         combined_results = pd.concat(all_results, ignore_index=True)
+        combined_results = combined_results.drop(columns=['Datei', 'Art'])  # Entfernen der Spalten "Datei" und "Art"
+
         combined_summary = pd.concat(all_summaries, ignore_index=True)
 
         # Gesamte Zusammenfassung anzeigen
