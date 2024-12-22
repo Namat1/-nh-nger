@@ -126,7 +126,7 @@ if uploaded_files:
                 worksheet.set_column(col_idx, col_idx, col_width)
 
             # Zusammenfassung nach KW
-            
+            for kw in combined_summary['KW'].unique():
                 summary_by_kw = combined_summary[combined_summary['KW'] == kw]
                 summary_worksheet = workbook.add_worksheet(f"Zusammenfassung_{kw}")
                 writer.sheets[f"Zusammenfassung_{kw}"] = summary_worksheet
