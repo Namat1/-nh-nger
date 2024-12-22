@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 import re
-import xlsxwriter
 
 # Titel der App
 st.title("Touren-Such-App")
+
 
 # Datei-Upload
 uploaded_file = st.file_uploader("Lade deine Excel- oder CSV-Datei hoch", type=["xlsx", "xls", "csv"])
@@ -32,37 +32,25 @@ if uploaded_file:
 
         # Anzeige der ursprünglichen Daten
         st.write("Originaldaten:")
-        st.dataframe(df.style.set_properties(**{
-            'background-color': '#f4f4f4',
-            'border': '1px solid #ddd',
-            'color': '#333',
-            'font-size': '12px',
-            'text-align': 'center'
-        }))
+        st.dataframe(df)
 
         # **Automatische Suchoptionen**
-        search_numbers = ["602", "620", "350", "520", "156"]
-        search_strings = ["AZ"]
+        search_numbers = ["602", "620", "350", "520", "156"]  # Zahlen, nach denen in 'Unnamed: 11' gesucht wird
+        search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]  # Zeichenfolgen, nach denen in 'Unnamed: 14' gesucht wird
 
         # Prüfen, ob die Spalten vorhanden sind
         required_columns = ['Unnamed: 0', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 6',
                             'Unnamed: 7', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
 
         if all(col in df.columns for col in required_columns):
-            # Suche nach den Zahlen in 'Unnamed: 11', aber schließe 607 aus
+            # Suche nach den Zahlen in 'Unnamed: 11'
             number_matches = df[df['Unnamed: 11'].astype(str).isin(search_numbers)]
 
-            # Suche nach "AZ" in 'Unnamed: 14'
+            # Suche nach den Zeichenfolgen in 'Unnamed: 14'
             text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False)]
 
             # Kombinieren der Suchergebnisse
-            combined_results = pd.concat([number_matches, text_matches])
-
-            # Entfernen von Duplikaten basierend auf Schlüsselspalten
-            combined_results = combined_results.drop_duplicates(subset=['Unnamed: 3', 'Unnamed: 4', 'Unnamed: 11'])
-
-            # 607 aus allen Ergebnissen ausschließen
-            combined_results = combined_results[combined_results['Unnamed: 11'].astype(str) != "607"]
+            combined_results = pd.concat([number_matches, text_matches]).drop_duplicates()
 
             # Nur die gewünschten Spalten extrahieren und umbenennen
             renamed_columns = {
@@ -77,82 +65,46 @@ if uploaded_file:
             }
             final_results = combined_results[required_columns].rename(columns=renamed_columns)
 
-            # Nur AZ in 'Art 2' behalten
-            final_results = final_results[final_results['Art 2'] == 'AZ']
+            # Sortieren nach Nachname
+            final_results = final_results.sort_values(by=['Nachname'])
 
-            # Wertzuweisung basierend auf Kennzeichen
-            def calculate_earnings(kennzeichen):
-                if kennzeichen in ["602", "156"]:
-                    return 40
-                elif kennzeichen in ["620", "350", "520"]:
-                    return 20
-                return 0
+            # Suchergebnisse anzeigen
+            st.write("Suchergebnisse:")
+            if not final_results.empty:
+                st.dataframe(final_results)
 
-            final_results['Verdienst (€)'] = final_results['Kennzeichen'].astype(str).apply(calculate_earnings)
+                # Export in Excel-Datei
+                output = BytesIO()
+                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                    # Schreibe Kalenderwoche in die erste Zeile
+                    workbook = writer.book
+                    worksheet = workbook.add_worksheet("Suchergebnisse")
+                    writer.sheets["Suchergebnisse"] = worksheet
 
-            # NaN-Werte durch leere Strings oder Nullen ersetzen
-            final_results = final_results.fillna('')
+                    # Kalenderwoche in die erste Zeile schreiben
+                    worksheet.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
 
-            # Zusammenfassung des Verdienstes pro Fahrer
-            earnings_summary = final_results.groupby(['Nachname', 'Vorname'], as_index=False)['Verdienst (€)'].sum()
-            earnings_summary = earnings_summary.rename(columns={'Verdienst (€)': 'Gesamtverdienst (€)'})
+                    # Schreibe die Daten ab der zweiten Zeile
+                    final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
 
-            # Sortieren nach Nachname und Vorname
-            final_results = final_results.sort_values(by=['Nachname', 'Vorname'], ascending=True)
-            earnings_summary = earnings_summary.sort_values(by=['Nachname', 'Vorname'], ascending=True)
+                    # Lesbarkeit verbessern
+                    for i, column in enumerate(final_results.columns):
+                        column_width = max(final_results[column].astype(str).map(len).max(), len(column))
+                        worksheet.set_column(i, i, column_width)
 
-            # Export in Excel-Datei
-            output = BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                workbook = writer.book
-                worksheet1 = workbook.add_worksheet("Suchergebnisse")
-                worksheet2 = workbook.add_worksheet("Zusammenfassung")
+                # Export-Button für Excel-Datei
+                st.download_button(
+                    label="Suchergebnisse als Excel herunterladen",
+                    data=output.getvalue(),
+                    file_name="Suchergebnisse.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
+            else:
+                st.warning("Keine Treffer gefunden.")
+        else:
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            st.error(f"Die folgenden benötigten Spalten fehlen in der Datei: {', '.join(missing_columns)}")
 
-                writer.sheets["Suchergebnisse"] = worksheet1
-                writer.sheets["Zusammenfassung"] = worksheet2
-
-                worksheet1.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
-
-                # Schreibe die Daten ab der zweiten Zeile
-                final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
-                earnings_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=0)
-
-                # Lesbarkeit verbessern und Farben hinzufügen
-                header_format = workbook.add_format({
-                    'bold': True,
-                    'text_wrap': True,
-                    'valign': 'top',
-                    'fg_color': '#D9EAD3',
-                    'border': 1
-                })
-
-                cell_format = workbook.add_format({
-                    'border': 1,
-                    'text_wrap': True,
-                    'valign': 'top',
-                    'fg_color': '#FFFAF0'
-                })
-
-                for col_num, value in enumerate(final_results.columns):
-                    worksheet1.write(2, col_num, value, header_format)
-                    worksheet1.set_column(col_num, col_num, 20)
-                for row_num, row_data in final_results.iterrows():
-                    for col_num, value in enumerate(row_data):
-                        worksheet1.write(row_num + 3, col_num, value if pd.notnull(value) else '', cell_format)
-
-                for col_num, value in enumerate(earnings_summary.columns):
-                    worksheet2.write(0, col_num, value, header_format)
-                    worksheet2.set_column(col_num, col_num, 20)
-                for row_num, row_data in earnings_summary.iterrows():
-                    for col_num, value in enumerate(row_data):
-                        worksheet2.write(row_num + 1, col_num, value if pd.notnull(value) else '', cell_format)
-
-            st.download_button(
-                label="Suchergebnisse und Zusammenfassung als Excel herunterladen",
-                data=output.getvalue(),
-                file_name="Suchergebnisse_mit_Zusammenfassung.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
     except Exception as e:
         st.error(f"Fehler beim Verarbeiten der Datei: {e}")
 else:
