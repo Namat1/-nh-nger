@@ -4,30 +4,24 @@ from io import BytesIO
 
 def filter_tours(file):
     # Excel-Datei einlesen
-    df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl")
+    try:
+        df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl", header=0)
+    except Exception as e:
+        st.error(f"Fehler beim Einlesen der Datei: {e}")
+        st.stop()
+
+    # Spalten anzeigen (zur Prüfung der Struktur)
+    st.write("Gefundene Spalten:", df.columns.tolist())
 
     # Spaltennamen bereinigen
     df.columns = df.columns.str.strip()  # Entfernt Leerzeichen
-    df.columns = df.columns.str.lower()  # Wandelt in Kleinbuchstaben um
+    df.columns = df.columns.str.lower()  # Wandelt Spaltennamen in Kleinbuchstaben um
 
-    # Manuelle Zuordnung der Spaltennamen
-    column_mapping = {
-        "l": "l",
-        "o": "o",
-        "a": "a",
-        "d": "d",
-        "e": "e",
-        "g": "g",
-        "h": "h"
-    }
-
-    # Spalten zuordnen
-    df = df.rename(columns=lambda x: column_mapping.get(x, x))
-
-    # Erwartete Spalten überprüfen
+    # Erwartete Spalten
     required_columns = ['l', 'o', 'a', 'd', 'e', 'g', 'h']
-    missing_columns = [col for col in required_columns if col not in df.columns]
 
+    # Fehlende Spalten prüfen
+    missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
         st.error(f"Die folgenden Spalten fehlen in der Datei: {', '.join(missing_columns)}")
         st.stop()
@@ -70,6 +64,11 @@ st.title("Touren Filter und Export")
 uploaded_file = st.file_uploader("Laden Sie eine Excel-Datei hoch", type="xlsx")
 
 if uploaded_file:
+    st.write("Datei erfolgreich hochgeladen. Überprüfe Struktur der Daten...")
+    df_preview = pd.read_excel(uploaded_file, sheet_name="Touren", engine="openpyxl").head(10)
+    st.write("Erste Zeilen der Datei:")
+    st.dataframe(df_preview)
+
     # Filterprozess starten
     filtered_data = filter_tours(uploaded_file)
 
