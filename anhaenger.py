@@ -94,9 +94,9 @@ if uploaded_file:
             earnings_summary = final_results.groupby(['Nachname', 'Vorname'], as_index=False)['Verdienst (€)'].sum()
             earnings_summary = earnings_summary.rename(columns={'Verdienst (€)': 'Gesamtverdienst (€)'})
 
-            # Sortieren nach Nachname und Vorname
-            final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
-            earnings_summary = earnings_summary.sort_values(by=['Nachname', 'Vorname'])
+            # **Sortieren nach Nachname und Vorname**
+            final_results = final_results.sort_values(by=['Nachname', 'Vorname'], ascending=True)
+            earnings_summary = earnings_summary.sort_values(by=['Nachname', 'Vorname'], ascending=True)
 
             # Export in Excel-Datei
             output = BytesIO()
