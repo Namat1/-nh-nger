@@ -73,7 +73,7 @@ if uploaded_file:
             # Sortieren nach Nachname und Vorname
             final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
 
-            # Verdienstberechnung
+            # Verdienstberechnung nur für Kennzeichen in Verbindung mit AZ
             payment_mapping = {
                 "602": 40,
                 "156": 40,
@@ -81,7 +81,10 @@ if uploaded_file:
                 "350": 20,
                 "520": 20
             }
-            final_results['Verdienst'] = final_results['Kennzeichen'].map(payment_mapping).fillna(0)
+            final_results['Verdienst'] = final_results.apply(
+                lambda row: payment_mapping.get(row['Kennzeichen'], 0) if "AZ" in str(row['Art 2']).upper() else 0,
+                axis=1
+            )
 
             # Tabellarische Zusammenfassung
             summary = final_results.groupby(['Nachname', 'Vorname'])['Verdienst'].sum().reset_index()
