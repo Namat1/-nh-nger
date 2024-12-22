@@ -6,7 +6,6 @@ import re
 # Titel der App
 st.title("Touren-Such-App")
 
-
 # Datei-Upload
 uploaded_file = st.file_uploader("Lade deine Excel- oder CSV-Datei hoch", type=["xlsx", "xls", "csv"])
 
@@ -43,8 +42,8 @@ if uploaded_file:
                             'Unnamed: 7', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
 
         if all(col in df.columns for col in required_columns):
-            # Suche nach den Zahlen in 'Unnamed: 11'
-            number_matches = df[df['Unnamed: 11'].astype(str).isin(search_numbers)]
+            # Suche nach den Zahlen in 'Unnamed: 11', wobei 607 ausgeschlossen wird
+            number_matches = df[df['Unnamed: 11'].astype(str).isin(search_numbers) & (df['Unnamed: 11'].astype(str) != "607")]
 
             # Suche nach den Zeichenfolgen in 'Unnamed: 14'
             text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False)]
