@@ -3,32 +3,24 @@ import pandas as pd
 from io import BytesIO
 
 def filter_tours(file):
-    # Excel-Datei einlesen ohne Header
-    df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl", header=None)  # Header wird ignoriert
+    # Excel-Datei einlesen (Header ab Zeile 5)
+    df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl", header=4)
 
-    # Feste Buchstaben als Spaltennamen zuweisen
-    max_columns = df.shape[1]  # Anzahl der Spalten bestimmen
-    column_names = [chr(65 + i) for i in range(max_columns)]  # Generiere Spaltennamen A, B, C, ...
-    df.columns = column_names  # Weist die Spaltennamen zu
+    # Spalten bereinigen
+    df['L'] = df['L'].astype(str).str.strip()  # Spalte L bereinigen
+    df['O'] = df['O'].astype(str).str.strip().str.upper()  # Spalte O bereinigen und in Großbuchstaben umwandeln
 
-    # Spaltenüberschriften anzeigen
-    st.write("Zugewiesene Spaltennamen:", column_names)
-
-    # Filterkriterien definieren (basierend auf Buchstaben)
+    # Filterkriterien definieren
     numbers_to_search = ["602", "156", "620", "350", "520"]
-    az_mw_values = ["AZ", "Az", "az", "MW", "Mw", "mw"]
+    az_mw_values = ["AZ"]
 
     # Zeilen filtern
-    try:
-        filtered_df = df[(df['L'].isin(numbers_to_search)) & (df['O'].str.strip().isin(az_mw_values))]
-    except KeyError as e:
-        st.error(f"Die Spalte {e} existiert nicht. Überprüfen Sie, ob die Datei korrekt formatiert ist.")
-        st.stop()
+    filtered_df = df[(df['L'].isin(numbers_to_search)) & (df['O'].isin(az_mw_values))]
 
     # Werte aus den relevanten Spalten holen
     result = []
     for _, row in filtered_df.iterrows():
-        tour = row['A']  # Tournummer in Spalte A
+        tour = row['A']
         if pd.notna(row['D']) and pd.notna(row['E']):
             name = f"{row['D']} {row['E']}"
         elif pd.notna(row['G']) and pd.notna(row['H']):
