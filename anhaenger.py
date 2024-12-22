@@ -4,16 +4,17 @@ from io import BytesIO
 
 def filter_tours(file):
     # Excel-Datei einlesen
-    df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl")
+    df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl", header=0)
 
     # Spaltennamen bereinigen
-    df.columns = df.columns.str.strip()
+    df.columns = df.columns.str.strip()  # Entfernt führende/nachfolgende Leerzeichen
+    df.columns = df.columns.str.replace(r"\s+", " ", regex=True)  # Ersetzt mehrfachen Leerraum
+    df.columns = df.columns.str.lower()  # Macht alle Spaltennamen kleinbuchstabig
 
-    # Sicherstellen, dass alle Werte als Strings gelesen werden
-    df = df.astype(str)
+    # Erwartete Spaltennamen (nach Bereinigung)
+    required_columns = ['l', 'o', 'a', 'd', 'e', 'g', 'h']
 
-    # Prüfen, ob die benötigten Spalten vorhanden sind
-    required_columns = ['L', 'O', 'A', 'D', 'E', 'G', 'H']
+    # Prüfen, ob die bereinigten Spalten vorhanden sind
     missing_columns = [col for col in required_columns if col not in df.columns]
 
     if missing_columns:
@@ -22,19 +23,19 @@ def filter_tours(file):
 
     # Filterkriterien definieren
     numbers_to_search = ["602", "156", "620", "350", "520"]
-    az_mw_values = ["AZ", "Az", "az", "MW", "Mw", "mw"]
+    az_mw_values = ["az", "mw"]
 
     # Zeilen filtern
-    filtered_df = df[(df['L'].isin(numbers_to_search)) & (df['O'].isin(az_mw_values))]
+    filtered_df = df[(df['l'].isin(numbers_to_search)) & (df['o'].str.lower().isin(az_mw_values))]
 
     # Werte aus den relevanten Spalten holen
     result = []
     for _, row in filtered_df.iterrows():
-        tour = row['A']
-        if pd.notna(row['D']) and pd.notna(row['E']):
-            name = f"{row['D']} {row['E']}"
-        elif pd.notna(row['G']) and pd.notna(row['H']):
-            name = f"{row['G']} {row['H']}"
+        tour = row['a']
+        if pd.notna(row['d']) and pd.notna(row['e']):
+            name = f"{row['d']} {row['e']}"
+        elif pd.notna(row['g']) and pd.notna(row['h']):
+            name = f"{row['g']} {row['h']}"
         else:
             name = "Unbekannt"
 
