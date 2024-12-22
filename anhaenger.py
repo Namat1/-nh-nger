@@ -3,15 +3,21 @@ import pandas as pd
 from io import BytesIO
 
 def filter_tours(file):
-    # Excel-Datei einlesen
-    df = pd.read_excel(file, sheet_name="Touren")
+    # Excel-Datei einlesen (Formeln ignorieren, nur Werte übernehmen)
+    df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl")
+
+    # Sicherstellen, dass alle Werte als Strings gelesen werden
+    df = df.astype(str)
+
+    # Bereinigung von Leerzeichen und überflüssigem Whitespace
+    df = df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
 
     # Filterkriterien definieren
-    numbers_to_search = [602, 156, 620, 350, 520]
+    numbers_to_search = ["602", "156", "620", "350", "520"]
     az_mw_values = ["AZ", "Az", "az", "MW", "Mw", "mw"]
 
     # Zeilen filtern
-    filtered_df = df[(df['L'].isin(numbers_to_search)) & (df['O'].str.strip().isin(az_mw_values))]
+    filtered_df = df[(df['L'].isin(numbers_to_search)) & (df['O'].isin(az_mw_values))]
 
     # Werte aus den relevanten Spalten holen
     result = []
@@ -61,3 +67,4 @@ if uploaded_file:
         file_name="Gefilterte_Touren.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
