@@ -43,7 +43,11 @@ if uploaded_file:
 
         if all(col in df.columns for col in required_columns):
             # Suche nach den Zahlen in 'Unnamed: 11', wobei 607 ausgeschlossen wird
-            number_matches = df[df['Unnamed: 11'].astype(str).isin(search_numbers) & (df['Unnamed: 11'].astype(str) != "607")]
+            number_matches = df[
+                df['Unnamed: 11'].astype(str).isin(search_numbers) & 
+                (df['Unnamed: 11'].astype(str) != "607") & 
+                ~((df['Unnamed: 11'].astype(str) == "607") & df['Unnamed: 14'].str.contains("AZ|Az|az", case=False, na=False))
+            ]
 
             # Suche nach den Zeichenfolgen in 'Unnamed: 14'
             text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False)]
