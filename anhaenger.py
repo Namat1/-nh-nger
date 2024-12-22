@@ -6,16 +6,10 @@ def filter_tours(file):
     # Excel-Datei einlesen (Header ab Zeile 5)
     df = pd.read_excel(file, sheet_name="Touren", engine="openpyxl", header=4)
 
-    # Spaltennamen prüfen und bereinigen
-    st.write("Gefundene Spalten:", df.columns.tolist())
-    df.columns = df.columns.str.strip()  # Entfernt Leerzeichen
-    df.columns = df.columns.str.replace(r"\s+", " ", regex=True)  # Mehrfachen Leerraum ersetzen
-
-    # Falls Spalten fehlen, direkt per Index ansprechen
-    if 'L' not in df.columns:
-        df['L'] = df.iloc[:, 12]  # Spalte M (Index 12)
-    if 'O' not in df.columns:
-        df['O'] = df.iloc[:, 14]  # Spalte O (Index 14)
+    # Spalten explizit zuordnen basierend auf ihrem Index
+    df['A'] = df.iloc[:, 0]  # Spalte A (1. Spalte)
+    df['L'] = df.iloc[:, 12]  # Spalte M (13. Spalte)
+    df['O'] = df.iloc[:, 14]  # Spalte O (15. Spalte)
 
     # Spalten bereinigen
     df['L'] = df['L'].astype(str).str.strip()
