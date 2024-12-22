@@ -29,12 +29,19 @@ def filter_tours(file):
 
     # Einzelne Filter prüfen
     filtered_by_l = df[df[spalte_l].isin(["602", "156", "620", "350", "520"])]
-    st.write(f"Nach Filter auf Spalte L: {len(filtered_by_l)} Zeilen gefunden")
-    st.dataframe(filtered_by_l.head(10))
+    
+    if filtered_by_l.empty:
+        st.error("Der DataFrame nach Filterung auf Spalte L ist leer.")
+    else:
+        st.write(f"Nach Filter auf Spalte L: {len(filtered_by_l)} Zeilen gefunden")
+        st.dataframe(filtered_by_l.head(10))
 
     filtered_by_o = df[df[spalte_o].isin(["AZ", "MW"])]
-    st.write(f"Nach Filter auf Spalte O: {len(filtered_by_o)} Zeilen gefunden")
-    st.dataframe(filtered_by_o.head(10))
+    if filtered_by_o.empty:
+        st.error("Der DataFrame nach Filterung auf Spalte O ist leer.")
+    else:
+        st.write(f"Nach Filter auf Spalte O: {len(filtered_by_o)} Zeilen gefunden")
+        st.dataframe(filtered_by_o.head(10))
 
     # Gesamte Filterung
     filtered_df = df[
