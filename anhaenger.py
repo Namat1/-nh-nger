@@ -82,7 +82,7 @@ if uploaded_file:
                 "520": 20
             }
             final_results['Verdienst'] = final_results.apply(
-                lambda row: payment_mapping.get(row['Kennzeichen'], 0) if "AZ" in str(row['Art 2']).upper() else 0,
+                lambda row: payment_mapping.get(row['Kennzeichen'], 0) if "AZ" in str(row['Art 2']).strip().upper() else 0,
                 axis=1
             )
 
