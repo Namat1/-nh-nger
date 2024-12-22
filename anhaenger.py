@@ -67,11 +67,21 @@ if uploaded_file:
             }
             final_results = combined_results[required_columns].rename(columns=renamed_columns)
 
+            # Wertzuweisung basierend auf Kennzeichen
+            def calculate_earnings(kennzeichen):
+                if kennzeichen in ["602", "156"]:
+                    return 40
+                elif kennzeichen in ["620", "350", "520"]:
+                    return 20
+                return 0
+
+            final_results['Verdienst (€)'] = final_results['Kennzeichen'].astype(str).apply(calculate_earnings)
+
             # Sortieren nach Nachname
             final_results = final_results.sort_values(by=['Nachname'])
 
             # Suchergebnisse anzeigen
-            st.write("Suchergebnisse:")
+            st.write("Suchergebnisse mit Verdienst:")
             if not final_results.empty:
                 st.dataframe(final_results)
 
