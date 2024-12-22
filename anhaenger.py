@@ -19,18 +19,23 @@ def filter_tours(file):
     spalte_l = "Unnamed: 11" # Spalte L (Filterkriterium)
     spalte_o = "Unnamed: 14" # Spalte O (Filterkriterium)
 
-    # Filterkriterien definieren
-    numbers_to_search = ["602", "156", "620", "350", "520"]
-    az_mw_values = ["AZ", "Mw", "mw", "MW"]
-
     # Bereinige die relevanten Spalten
     df[spalte_l] = df[spalte_l].astype(str).str.strip()
     df[spalte_o] = df[spalte_o].astype(str).str.strip().str.upper()
+
+    # Filterkriterien definieren
+    numbers_to_search = ["602", "156", "620", "350", "520"]
+    az_mw_values = ["AZ", "MW"]
 
     # Zeilen filtern
     filtered_df = df[
         (df[spalte_l].isin(numbers_to_search)) & (df[spalte_o].isin(az_mw_values))
     ]
+
+    # Prüfen, ob mindestens 500 Zeilen im Ergebnis sind
+    if len(filtered_df) < 500:
+        st.error(f"Die Filterung ergab nur {len(filtered_df)} Zeilen. Es werden mindestens 500 Zeilen benötigt.")
+        return None
 
     # Werte aus den relevanten Spalten holen
     result = []
@@ -58,7 +63,7 @@ def convert_df_to_excel(df):
     return processed_data
 
 # Streamlit App
-st.title("Touren Filter und Export")
+st.title("Touren Filter und Export (mind. 500 Zeilen)")
 
 uploaded_file = st.file_uploader("Laden Sie eine Excel-Datei hoch", type="xlsx")
 
@@ -66,15 +71,18 @@ if uploaded_file:
     st.write("Datei erfolgreich hochgeladen. Verarbeite Daten...")
     filtered_data = filter_tours(uploaded_file)
 
-    # Gefilterte Daten anzeigen
-    st.write("Gefilterte Touren:")
-    st.dataframe(filtered_data)
+    if filtered_data is not None:
+        # Gefilterte Daten anzeigen
+        st.write("Gefilterte Touren:")
+        st.dataframe(filtered_data)
 
-    # Möglichkeit zum Download der Ergebnisse
-    excel_data = convert_df_to_excel(filtered_data)
-    st.download_button(
-        label="Download Excel Datei",
-        data=excel_data,
-        file_name="Gefilterte_Touren.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+        # Möglichkeit zum Download der Ergebnisse
+        excel_data = convert_df_to_excel(filtered_data)
+        st.download_button(
+            label="Download Excel Datei",
+            data=excel_data,
+            file_name="Gefilterte_Touren.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    else:
+        st.error("Die Filterung ergab nicht genügend Zeilen. Bitte überprüfen Sie die Daten.")
