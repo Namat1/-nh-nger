@@ -67,6 +67,10 @@ if uploaded_files:
                 }
                 final_results = combined_results[required_columns].rename(columns=renamed_columns)
 
+                # Debug: Zeige Zwischenergebnisse vor der Berechnung
+                st.write("Zwischenergebnisse vor der Verdienstberechnung:")
+                st.dataframe(final_results)
+
                 # Sortieren und Verdienst berechnen
                 final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
                 payment_mapping = {"602": 40, "156": 40, "620": 20, "350": 20, "520": 20}
@@ -77,10 +81,19 @@ if uploaded_files:
                     return payment_mapping.get(kennzeichen, 0) if art_2 == "AZ" else 0
 
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
+
+                # Debug: Zeige Zwischenergebnisse nach der Verdienstberechnung
+                st.write("Zwischenergebnisse nach der Verdienstberechnung:")
+                st.dataframe(final_results)
+
                 final_results['KW'] = kalenderwoche  # KW zur Ergebnis-Tabelle hinzufügen
 
                 # Zeilen mit 0 oder NaN in "Verdienst" entfernen
-                final_results = final_results[final_results['Verdienst'] > 0].dropna()
+                final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
+
+                # Debug: Zeige gefilterte Ergebnisse
+                st.write("Gefilterte Ergebnisse (keine 0 oder NaN):")
+                st.dataframe(final_results)
 
                 # Ergebnisse sammeln
                 all_results.append(final_results)
