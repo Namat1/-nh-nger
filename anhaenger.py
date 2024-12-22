@@ -31,7 +31,13 @@ if uploaded_file:
 
         # Anzeige der ursprünglichen Daten
         st.write("Originaldaten:")
-        st.dataframe(df)
+        st.dataframe(df.style.set_properties(**{
+            'background-color': '#f4f4f4',
+            'border': '1px solid #ddd',
+            'color': '#333',
+            'font-size': '12px',
+            'text-align': 'center'
+        }))
 
         # **Automatische Suchoptionen**
         search_numbers = ["602", "620", "350", "520", "156"]  # Zahlen, nach denen in 'Unnamed: 11' gesucht wird
@@ -88,9 +94,21 @@ if uploaded_file:
             # Suchergebnisse anzeigen
             st.write("Suchergebnisse mit Verdienst:")
             if not final_results.empty:
-                st.dataframe(final_results)
+                st.dataframe(final_results.style.set_properties(**{
+                    'background-color': '#e6f7ff',
+                    'border': '1px solid #cce7ff',
+                    'color': '#003366',
+                    'font-size': '12px',
+                    'text-align': 'center'
+                }))
                 st.write("Zusammenfassung des Verdienstes pro Fahrer:")
-                st.dataframe(earnings_summary)
+                st.dataframe(earnings_summary.style.set_properties(**{
+                    'background-color': '#f9f9f9',
+                    'border': '1px solid #ccc',
+                    'color': '#333',
+                    'font-size': '12px',
+                    'text-align': 'center'
+                }))
 
                 # Export in Excel-Datei
                 output = BytesIO()
