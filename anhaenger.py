@@ -4,7 +4,7 @@ from io import BytesIO
 import re
 
 # Titel der App
-st.title("Touren-Such-App für mehrere Dateien")
+st.title("Touren-Such-App für mehrere Dateien mit Zusammenfassung nach KW")
 
 # Mehrere Dateien hochladen
 uploaded_files = st.file_uploader("Lade deine Excel- oder CSV-Dateien hoch", type=["xlsx", "xls", "csv"], accept_multiple_files=True)
@@ -78,9 +78,10 @@ if uploaded_files:
                     return payment_mapping.get(kennzeichen, 0) if art_2 == "AZ" else 0
 
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
+                final_results['KW'] = kalenderwoche  # KW zur Ergebnis-Tabelle hinzufügen
 
                 # Zusammenfassung erstellen
-                summary = final_results.groupby(['Nachname', 'Vorname'])['Verdienst'].sum().reset_index()
+                summary = final_results.groupby(['KW', 'Nachname', 'Vorname'])['Verdienst'].sum().reset_index()
                 summary = summary.rename(columns={"Verdienst": "Gesamtverdienst"})
 
                 # Ergebnisse sammeln
@@ -100,10 +101,9 @@ if uploaded_files:
         combined_summary = pd.concat(all_summaries, ignore_index=True)
 
         # Gesamte Zusammenfassung anzeigen
-        combined_summary = combined_summary.groupby(['Nachname', 'Vorname'])['Gesamtverdienst'].sum().reset_index()
         st.write("Kombinierte Suchergebnisse:")
         st.dataframe(combined_results)
-        st.write("Kombinierte Zusammenfassung:")
+        st.write("Zusammenfassung nach KW:")
         st.dataframe(combined_summary)
 
         # Ergebnisse in eine Excel-Datei exportieren
@@ -119,19 +119,21 @@ if uploaded_files:
                 col_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name))
                 worksheet.set_column(col_idx, col_idx, col_width)
 
-            # Zusammenfassung
-            summary_worksheet = workbook.add_worksheet("Zusammenfassung")
-            writer.sheets["Zusammenfassung"] = summary_worksheet
-            combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=0)
-            for col_idx, column_name in enumerate(combined_summary.columns):
-                col_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name))
-                summary_worksheet.set_column(col_idx, col_idx, col_width)
+            # Zusammenfassung nach KW
+            for kw in combined_summary['KW'].unique():
+                summary_by_kw = combined_summary[combined_summary['KW'] == kw]
+                summary_worksheet = workbook.add_worksheet(f"Zusammenfassung_{kw}")
+                writer.sheets[f"Zusammenfassung_{kw}"] = summary_worksheet
+                summary_by_kw.to_excel(writer, index=False, sheet_name=f"Zusammenfassung_{kw}", startrow=0)
+                for col_idx, column_name in enumerate(summary_by_kw.columns):
+                    col_width = max(summary_by_kw[column_name].astype(str).map(len).max(), len(column_name))
+                    summary_worksheet.set_column(col_idx, col_idx, col_width)
 
         # Download-Button
         st.download_button(
             label="Kombinierte Ergebnisse als Excel herunterladen",
             data=output.getvalue(),
-            file_name="Kombinierte_Suchergebnisse.xlsx",
+            file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     else:
