@@ -70,6 +70,10 @@ if uploaded_file:
             }
             final_results = combined_results[required_columns].rename(columns=renamed_columns)
 
+            # Debugging-Ausgabe: Zeige relevante Spalten zur Überprüfung
+            st.write("Debugging-Daten:")
+            st.write(final_results[['Kennzeichen', 'Art 2']])
+
             # Sortieren nach Nachname und Vorname
             final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
 
@@ -88,6 +92,10 @@ if uploaded_file:
                 if "AZ" in str(row['Art 2']).strip().upper() else 0,
                 axis=1
             )
+
+            # Debugging-Ausgabe: Zeige Zeilen mit berechnetem Verdienst
+            st.write("Zeilen mit berechnetem Verdienst:")
+            st.write(final_results[final_results['Verdienst'] > 0])
 
             # Tabellarische Zusammenfassung
             summary = final_results.groupby(['Nachname', 'Vorname'])['Verdienst'].sum().reset_index()
