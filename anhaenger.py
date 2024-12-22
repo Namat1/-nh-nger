@@ -42,15 +42,17 @@ if uploaded_file:
                             'Unnamed: 7', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
 
         if all(col in df.columns for col in required_columns):
-            # Suche nach den Zahlen in 'Unnamed: 11', wobei 607 ausgeschlossen wird
+            # Suche nach den Zahlen in 'Unnamed: 11', wobei 607 vollständig ausgeschlossen wird
             number_matches = df[
                 df['Unnamed: 11'].astype(str).isin(search_numbers) & 
-                (df['Unnamed: 11'].astype(str) != "607") & 
-                ~((df['Unnamed: 11'].astype(str) == "607") & df['Unnamed: 14'].str.contains("AZ|Az|az|MW|Mw|mw", case=False, na=False))
+                (df['Unnamed: 11'].astype(str) != "607")
             ]
 
-            # Suche nach den Zeichenfolgen in 'Unnamed: 14'
-            text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False)]
+            # Suche nach den Zeichenfolgen in 'Unnamed: 14', wobei Zeilen mit 607 ausgeschlossen werden
+            text_matches = df[
+                df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) &
+                (df['Unnamed: 11'].astype(str) != "607")
+            ]
 
             # Kombinieren der Suchergebnisse
             combined_results = pd.concat([number_matches, text_matches]).drop_duplicates()
