@@ -3,23 +3,9 @@ import pandas as pd
 from io import BytesIO
 import re
 
-# Funktion, um die Formel in der verbundenen Zelle zu extrahieren und das Datum zuzuordnen
-def assign_dates(df, date_column):
-    # Extrahiere den tatsächlichen Wert aus der Formel in der verbundenen Zelle
-    def extract_date_from_formula(formula):
-        match = re.search(r"'Druck Fahrer'!(E\d+|G\d+)", formula)
-        if match:
-            return match.group(1)  # Rückgabe des Zellbezugs als Beispiel
-        return formula  # Wenn keine Formel, gib den Originalwert zurück
-
-    # Wende die Datumsextraktion auf die Spalte an
-    df[date_column] = df[date_column].fillna(method="ffill")  # Fülle die verbundenen Zellen
-    df[date_column] = df[date_column].apply(lambda x: extract_date_from_formula(str(x)))
-    return df
-
 # Titel der App
 st.title("Touren-Such-App")
-st.write("Lade eine Datei hoch, und die Daten werden verarbeitet. Verbundene Zellen (mit Formeln) werden korrekt zugeordnet.")
+st.write("Lade eine Datei hoch, und die Daten werden in den Spalten `Unnamed: 11` und `Unnamed: 14` automatisch durchsucht.")
 
 # Datei-Upload
 uploaded_file = st.file_uploader("Lade deine Excel- oder CSV-Datei hoch", type=["xlsx", "xls", "csv"])
@@ -37,7 +23,7 @@ if uploaded_file:
         # Prüfen, ob die Datei Excel oder CSV ist
         if uploaded_file.name.endswith('.xlsx') or uploaded_file.name.endswith('.xls'):
             # Excel-Datei laden und Blatt 'Touren' lesen
-            df = pd.read_excel(uploaded_file, sheet_name="Touren", engine="openpyxl")
+            df = pd.read_excel(uploaded_file, sheet_name="Touren")
             st.success("Das Blatt 'Touren' wurde erfolgreich geladen!")
         else:
             # CSV-Datei laden
@@ -48,16 +34,12 @@ if uploaded_file:
         st.write("Originaldaten:")
         st.dataframe(df)
 
-        # Fülle verbundene Zellen und extrahiere das Datum
-        if "Datum" in df.columns:
-            df = assign_dates(df, "Datum")
-
         # **Automatische Suchoptionen**
         search_numbers = ["602", "620", "350", "520", "156"]  # Zahlen, nach denen in 'Unnamed: 11' gesucht wird
         search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]  # Zeichenfolgen, nach denen in 'Unnamed: 14' gesucht wird
 
         # Prüfen, ob die Spalten vorhanden sind
-        required_columns = ['Datum', 'Unnamed: 0', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 6',
+        required_columns = ['Unnamed: 0', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 6',
                             'Unnamed: 7', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
 
         if all(col in df.columns for col in required_columns):
@@ -72,7 +54,6 @@ if uploaded_file:
 
             # Nur die gewünschten Spalten extrahieren und umbenennen
             renamed_columns = {
-                'Datum': 'Datum',
                 'Unnamed: 0': 'Tour',
                 'Unnamed: 3': 'Nachname',
                 'Unnamed: 4': 'Vorname',
@@ -100,7 +81,7 @@ if uploaded_file:
                     # Kalenderwoche in die erste Zeile schreiben
                     worksheet.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
 
-                    # Schreibe die Daten ab der dritten Zeile
+                    # Schreibe die Daten ab der zweiten Zeile
                     final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
 
                     # Lesbarkeit verbessern
