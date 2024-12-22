@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
+import re
 
 # Titel der App
 st.title("Touren-Such-App")
@@ -11,6 +12,14 @@ uploaded_file = st.file_uploader("Lade deine Excel- oder CSV-Datei hoch", type=[
 
 if uploaded_file:
     try:
+        # Extrahiere den Dateinamen
+        file_name = uploaded_file.name
+        st.write(f"Hochgeladene Datei: {file_name}")
+
+        # Kalenderwoche aus dem Dateinamen extrahieren
+        kw_match = re.search(r'KW(\d{1,2})', file_name, re.IGNORECASE)
+        kalenderwoche = f"KW{kw_match.group(1)}" if kw_match else "Keine KW gefunden"
+
         # Prüfen, ob die Datei Excel oder CSV ist
         if uploaded_file.name.endswith('.xlsx') or uploaded_file.name.endswith('.xls'):
             # Excel-Datei laden und Blatt 'Touren' lesen
@@ -54,14 +63,18 @@ if uploaded_file:
                 # Export in Excel-Datei
                 output = BytesIO()
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    # Schreibe Daten in Excel
-                    final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
+                    # Schreibe Kalenderwoche in die erste Zeile
+                    workbook = writer.book
+                    worksheet = workbook.add_worksheet("Suchergebnisse")
+                    writer.sheets["Suchergebnisse"] = worksheet
+
+                    # Kalenderwoche in die erste Zeile schreiben
+                    worksheet.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
+
+                    # Schreibe die Daten ab der zweiten Zeile
+                    final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
 
                     # Lesbarkeit verbessern
-                    workbook = writer.book
-                    worksheet = writer.sheets["Suchergebnisse"]
-
-                    # Auto-Adjust Columns
                     for i, column in enumerate(final_results.columns):
                         column_width = max(final_results[column].astype(str).map(len).max(), len(column))
                         worksheet.set_column(i, i, column_width)
