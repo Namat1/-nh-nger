@@ -40,7 +40,7 @@ if uploaded_file:
 
         # Prüfen, ob die Spalten vorhanden sind
         required_columns = ['Unnamed: 0', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 6',
-                            'Unnamed: 7', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
+                            'Unnamed: 7', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
 
         if all(col in df.columns for col in required_columns):
             # Suche nach den Zahlen in 'Unnamed: 11'
@@ -52,8 +52,18 @@ if uploaded_file:
             # Kombinieren der Suchergebnisse
             combined_results = pd.concat([number_matches, text_matches]).drop_duplicates()
 
-            # Nur die gewünschten Spalten extrahieren
-            final_results = combined_results[required_columns]
+            # Nur die gewünschten Spalten extrahieren und umbenennen
+            renamed_columns = {
+                'Unnamed: 0': 'Tour',
+                'Unnamed: 3': 'Nachname',
+                'Unnamed: 4': 'Vorname',
+                'Unnamed: 6': 'Nachname 2',
+                'Unnamed: 7': 'Vorname 2',
+                'Unnamed: 11': 'Kennzeichen',
+                'Unnamed: 12': 'Art',
+                'Unnamed: 14': 'Art 2'
+            }
+            final_results = combined_results[required_columns].rename(columns=renamed_columns)
 
             # Suchergebnisse anzeigen
             st.write("Suchergebnisse:")
