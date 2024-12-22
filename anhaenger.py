@@ -4,7 +4,7 @@ import re
 
 # Titel der App
 st.title("Touren-Filter und Such-App")
-st.write("Lade eine Datei hoch, filtere und suche in den Daten automatisch nach spezifischen Zahlen und Textmustern.")
+st.write("Lade eine Datei hoch, und die Daten werden automatisch durchsucht.")
 
 # Datei-Upload
 uploaded_file = st.file_uploader("Lade deine Excel- oder CSV-Datei hoch", type=["xlsx", "xls", "csv"])
@@ -25,41 +25,17 @@ if uploaded_file:
         st.write("Originaldaten:")
         st.dataframe(df)
 
-        # **Filteroptionen in der Seitenleiste**
-        st.sidebar.header("Filter- und Suchoptionen")
+        # **Automatische Suchoptionen**
+        search_numbers = ["602", "620", "350", "520", "156"]  # Zahlen, nach denen gesucht wird
+        search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]  # Zeichenfolgen, nach denen gesucht wird
 
-        # Filter: Text- und numerische Spalten
-        filtered_df = df.copy()
-        for column in df.columns:
-            if df[column].dtype == 'object':  # Textspalten
-                filter_value = st.sidebar.text_input(f"Filter für {column} (Text):", "")
-                if filter_value:
-                    # Text filtern: Groß-/Kleinschreibung ignorieren, NaN-Werte behandeln
-                    filtered_df = filtered_df[
-                        filtered_df[column].astype(str).str.contains(filter_value, case=False, na=False)
-                    ]
-
-            elif pd.api.types.is_numeric_dtype(df[column]):  # Numerische Spalten
-                min_val = st.sidebar.number_input(f"Min {column}:", value=float(df[column].min()), step=1.0)
-                max_val = st.sidebar.number_input(f"Max {column}:", value=float(df[column].max()), step=1.0)
-                filtered_df = filtered_df[(filtered_df[column] >= min_val) & (filtered_df[column] <= max_val)]
-
-        # **Suchoptionen: Zahlen und Textmuster**
-        st.sidebar.subheader("Suchmuster")
-        search_numbers = st.sidebar.text_input("Zahlen (kommagetrennt):", "602,620,350,520,156")
-        search_strings = st.sidebar.text_input("Zeichenfolgen (kommagetrennt):", "AZ,Az,az,MW,Mw,mw")
-
-        # Listen von Suchmustern erstellen
-        number_patterns = [num.strip() for num in search_numbers.split(",")]
-        string_patterns = [string.strip() for string in search_strings.split(",")]
-
-        # Automatische Suche in den gefilterten Daten
+        # Automatische Suche in den Daten
         search_results = []
-        for _, row in filtered_df.iterrows():
+        for _, row in df.iterrows():
             row_content = " ".join(row.astype(str).values)  # Zeileninhalt als ein String
             # Überprüfen auf Zahlen und Strings
-            if any(re.search(rf"\b{num}\b", row_content) for num in number_patterns) or \
-               any(re.search(rf"{string}", row_content, re.IGNORECASE) for string in string_patterns):
+            if any(re.search(rf"\b{num}\b", row_content) for num in search_numbers) or \
+               any(re.search(rf"{string}", row_content, re.IGNORECASE) for string in search_strings):
                 search_results.append(row)
 
         # Suchergebnisse anzeigen
