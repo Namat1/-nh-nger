@@ -74,6 +74,10 @@ if uploaded_file:
             }
             final_results = combined_results[required_columns].rename(columns=renamed_columns)
 
+            # Debugging-Ausgabe: Zeige relevante Spalten zur Überprüfung
+            st.write("Debugging-Daten:")
+            st.write(final_results[['Kennzeichen', 'Art 2']])
+
             # Sortieren nach Nachname und Vorname
             final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
 
@@ -96,6 +100,10 @@ if uploaded_file:
 
             final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
 
+            # Debugging-Ausgabe: Zeige Zeilen mit berechnetem Verdienst
+            st.write("Zeilen mit berechnetem Verdienst:")
+            st.write(final_results[final_results['Verdienst'] > 0])
+
             # Tabellarische Zusammenfassung
             summary = final_results.groupby(['Nachname', 'Vorname'])['Verdienst'].sum().reset_index()
             summary = summary.rename(columns={"Verdienst": "Gesamtverdienst"})
@@ -116,22 +124,17 @@ if uploaded_file:
                     writer.sheets["Suchergebnisse"] = worksheet
                     worksheet.write(0, 0, f"Kalenderwoche: {kalenderwoche}")
                     final_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
-
-                    # Formatierung: Farben und Rahmen
-                    format_header = workbook.add_format({'bold': True, 'align': 'center', 'bg_color': '#D7E4BC', 'border': 1})
-                    format_cell = workbook.add_format({'border': 1})
-                    
-                    worksheet.set_row(2, None, format_header)
-                    worksheet.set_column(0, len(final_results.columns) - 1, 15, format_cell)
+                    for i, column in enumerate(final_results.columns):
+                        column_width = max(final_results[column].astype(str).map(len).max(), len(column))
+                        worksheet.set_column(i, i, column_width)
 
                     # Blatt mit Zusammenfassung
                     summary_worksheet = workbook.add_worksheet("Zusammenfassung")
                     writer.sheets["Zusammenfassung"] = summary_worksheet
                     summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=0)
-
-                    # Formatierung: Farben und Rahmen
-                    summary_worksheet.set_row(0, None, format_header)
-                    summary_worksheet.set_column(0, len(summary.columns) - 1, 15, format_cell)
+                    for i, column in enumerate(summary.columns):
+                        column_width = max(summary[column].astype(str).map(len).max(), len(column))
+                        summary_worksheet.set_column(i, i, column_width)
 
                 # Export-Button für Excel-Datei
                 st.download_button(
