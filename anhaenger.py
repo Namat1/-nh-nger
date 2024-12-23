@@ -134,7 +134,29 @@ if combined_results is not None and combined_summary is not None:
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
 
         # Zusammenfassung nach KW
-        combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung")
+        summary_sheet = writer.book.add_worksheet("Zusammenfassung")
+        combined_summary.to_excel(writer, sheet_name="Zusammenfassung", index=False, startrow=1)
+
+        # Formatierungen hinzufügen
+        header_format = writer.book.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
+        blue_format = writer.book.add_format({'bg_color': '#E3F2FD', 'border': 1})
+        green_format = writer.book.add_format({'bg_color': '#E8F5E9', 'border': 1})
+
+        # Formatierung der Kopfzeile
+        for col_num, column_name in enumerate(combined_summary.columns):
+            summary_sheet.write(0, col_num, column_name, header_format)
+
+        # Zeilen farblich formatieren (abwechselnd nach KW)
+        current_kw = None
+        current_format = green_format
+        for row_num in range(len(combined_summary)):
+            kw = combined_summary.iloc[row_num]['KW']
+            if kw != current_kw:
+                current_kw = kw
+                current_format = green_format if current_format == blue_format else blue_format
+
+            for col_num in range(len(combined_summary.columns)):
+                summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
 
     st.download_button(
         label="Kombinierte Ergebnisse als Excel herunterladen",
