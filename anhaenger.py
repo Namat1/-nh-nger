@@ -164,12 +164,13 @@ if uploaded_files:
                 max_content_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name))
                 summary_worksheet.set_column(col_idx, col_idx, max_content_width + 2)
 
-           # Download-Button
-           st.download_button(
-               label="Kombinierte Ergebnisse als Excel herunterladen",
-               data=output.getvalue(),
-               file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
-               mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          )
+                       # Download-Button
+            st.download_button(
+                label="Kombinierte Ergebnisse als Excel herunterladen",
+                data=output.getvalue(),
+                file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+
 
            
