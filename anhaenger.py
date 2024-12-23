@@ -83,15 +83,19 @@ if uploaded_files:
                 # Zeilen mit 0 oder NaN in "Verdienst" entfernen (Numerischer Vergleich)
                 final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
 
-                # Euro-Zeichen hinzufügen
-                final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
-
-                final_results['KW'] = kalenderwoche  # KW zur Ergebnis-Tabelle hinzufügen
+                # KW zur Ergebnis-Tabelle hinzufügen
+                final_results['KW'] = kalenderwoche
 
                 # Ergebnisse sammeln
                 all_results.append(final_results)
+
+                # Zusammenfassung erstellen (numerisch summieren)
                 summary = final_results.groupby(['KW', 'Nachname', 'Vorname'])['Verdienst'].sum().reset_index()
-                summary = summary.rename(columns={"Verdienst": "Gesamtverdienst"})
+
+                # Euro-Zeichen hinzufügen in der Zusammenfassung
+                summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x} €")
+
+                # Zusammenfassung in die Sammlung einfügen
                 all_summaries.append(summary)
             else:
                 missing_columns = [col for col in required_columns if col not in df.columns]
@@ -120,41 +124,10 @@ if uploaded_files:
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             # Suchergebnisse
-            workbook = writer.book
-            worksheet = workbook.add_worksheet("Suchergebnisse")
-            writer.sheets["Suchergebnisse"] = worksheet
-
-            # Format für linkszentrierte Inhalte
-            left_align_format = workbook.add_format({'align': 'left'})
-
-            # Daten schreiben
             final_output_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
 
-            # Linkszentrierung für die erste Spalte
-            worksheet.set_column('A:A', None, left_align_format)  # Spalte A links ausrichten
-
-            # Verfeinerte Zellenbreitenanpassung
-            for col_idx, column_name in enumerate(final_output_results.columns):
-                max_content_width = final_output_results[column_name].astype(str).map(len).max()
-                max_header_width = len(column_name)
-                adjusted_width = max(max_content_width, max_header_width) + 2  # Puffer von 2 Zeichen
-                worksheet.set_column(col_idx, col_idx, adjusted_width)
-
             # Zusammenfassung nach KW
-            for kw in combined_summary['KW'].unique():
-                summary_by_kw = combined_summary[combined_summary['KW'] == kw]
-                summary_worksheet = workbook.add_worksheet(f"Zusammenfassung_{kw}")
-                writer.sheets[f"Zusammenfassung_{kw}"] = summary_worksheet
-
-                # Schreiben der zusammengefassten Daten für jede KW
-                summary_by_kw.to_excel(writer, index=False, sheet_name=f"Zusammenfassung_{kw}", startrow=0)
-
-                # Verfeinerte Zellenbreitenanpassung für Zusammenfassung
-                for col_idx, column_name in enumerate(summary_by_kw.columns):
-                    max_content_width = summary_by_kw[column_name].astype(str).map(len).max()
-                    max_header_width = len(column_name)
-                    adjusted_width = max(max_content_width, max_header_width) + 2  # Puffer von 2 Zeichen
-                    summary_worksheet.set_column(col_idx, col_idx, adjusted_width)
+            combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=2)
 
         # Download-Button
         st.download_button(
