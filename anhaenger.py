@@ -114,14 +114,17 @@ if uploaded_files:
             st.error(f"Fehler beim Verarbeiten der Datei {file_name}: {e}")
 
     # Gesamtergebnisse zusammenführen
-if all_results:
-    combined_results = pd.concat(all_results, ignore_index=True)
+    if all_results:
+        combined_results = pd.concat(all_results, ignore_index=True)
 
-    # Sortierung der Ergebnisse nach numerischer KW
-    combined_results['KW_Numeric'] = combined_results['KW'].str.extract(r'(\d+)').astype(int)
-    combined_results = combined_results.sort_values(by=['KW_Numeric']).drop(columns=['KW_Numeric'])
+        # Sortierung der Suchergebnisse nach numerischer KW
+        combined_results['KW_Numeric'] = combined_results['KW'].str.extract(r'(\d+)').astype(int)
+        combined_results = combined_results.sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
-
+        # Sortierung der Zusammenfassung nach numerischer KW
+        combined_summary = pd.concat(all_summaries, ignore_index=True)
+        combined_summary['KW_Numeric'] = combined_summary['KW'].str.extract(r'(\d+)').astype(int)
+        combined_summary = combined_summary.sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
     # Fortschrittsanzeige schließen und "FERTIG" anzeigen
     progress_bar.empty()  # Fortschrittsbalken entfernen
@@ -159,42 +162,10 @@ if combined_results is not None and combined_summary is not None:
             row_format = formats.get(kw, default_format)
             worksheet.set_row(row_num, None, row_format)
 
-         # Zusammenfassung nach KW
-        summary_sheet = writer.book.add_worksheet("Zusammenfassung")
-        combined_summary.to_excel(writer, sheet_name="Zusammenfassung", index=False, startrow=1)
-
-        # Formatierungen hinzufügen
-        header_format = writer.book.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
-        blue_format = writer.book.add_format({'bg_color': '#76bef5', 'border': 1})
-        green_format = writer.book.add_format({'bg_color': '#6bff77', 'border': 1})
-
-        # Formatierung der Kopfzeile
-        for col_num, column_name in enumerate(combined_summary.columns):
-            summary_sheet.write(0, col_num, column_name, header_format)
-
-        # Zeilen farblich formatieren (abwechselnd nach KW)
-        current_kw = None
-        current_format = green_format
-        for row_num in range(len(combined_summary)):
-            kw = combined_summary.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_format = green_format if current_format == blue_format else blue_format
-
-            for col_num in range(len(combined_summary.columns)):
-                summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
-
-        # Automatische Spaltenbreite einstellen
-        for col_num, column_name in enumerate(combined_summary.columns):
-            max_content_width = max(
-                combined_summary[column_name].astype(str).apply(len).max(),
-                len(column_name)
-            )
-            summary_sheet.set_column(col_num, col_num, max_content_width + 2)
-
+        # Zusammenfassung
+        combined_summary.to_excel(writer, sheet_name="Zusammenfassung", index=False)
 
     st.download_button(
-
         label="Kombinierte Ergebnisse als Excel herunterladen",
         data=output.getvalue(),
         file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
