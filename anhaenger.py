@@ -139,8 +139,8 @@ if combined_results is not None and combined_summary is not None:
 
         # Formatierungen hinzufügen
         header_format = writer.book.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
-        blue_format = writer.book.add_format({'bg_color': '#52b5ff', 'border': 1})
-        green_format = writer.book.add_format({'bg_color': '#4dd658', 'border': 1})
+        blue_format = writer.book.add_format({'bg_color': '#76bef5', 'border': 1})
+        green_format = writer.book.add_format({'bg_color': '#6bff77', 'border': 1})
 
         # Formatierung der Kopfzeile
         for col_num, column_name in enumerate(combined_summary.columns):
