@@ -2,22 +2,32 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 import re
+import time
 
 # Titel der App
-st.title("Zulage GGL + Anhänger")
+st.title("Touren-Such-App für mehrere Dateien mit Zusammenfassung nach KW")
 
 # Mehrere Dateien hochladen
 uploaded_files = st.file_uploader("Lade deine Excel- oder CSV-Dateien hoch", type=["xlsx", "xls", "csv"], accept_multiple_files=True)
 
 if uploaded_files:
+    # Fortschrittsbalken erstellen
+    progress_bar = st.progress(0)  # Initialisiere den Fortschrittsbalken
+    total_files = len(uploaded_files)
+    processed_files = 0
+
     all_results = []  # Liste, um Ergebnisse zu speichern
     all_summaries = []  # Liste, um Zusammenfassungen zu speichern
 
     for uploaded_file in uploaded_files:
         try:
+            # Fortschrittsanzeige aktualisieren
+            processed_files += 1
+            progress_percentage = int((processed_files / total_files) * 100)
+            progress_bar.progress(progress_percentage)
+
             # Dateiname extrahieren
             file_name = uploaded_file.name
-            st.write(f"Verarbeite Datei: {file_name}")
 
             # Kalenderwoche aus dem Dateinamen extrahieren
             kw_match = re.search(r'KW(\d{1,2})', file_name, re.IGNORECASE)
@@ -26,10 +36,8 @@ if uploaded_files:
             # Datei lesen
             if uploaded_file.name.endswith(('.xlsx', '.xls')):
                 df = pd.read_excel(uploaded_file, sheet_name="Touren")
-                st.success(f"Das Blatt 'Touren' aus {file_name} wurde erfolgreich geladen!")
             else:
                 df = pd.read_csv(uploaded_file)
-                st.success(f"CSV-Datei {file_name} wurde erfolgreich geladen!")
 
             # Automatische Suchoptionen
             search_numbers = ["602", "620", "350", "520", "156"]
@@ -103,12 +111,8 @@ if uploaded_files:
 
                 # Zusammenfassung in die Sammlung einfügen
                 all_summaries.append(summary)
-            else:
-                missing_columns = [col for col in required_columns if col not in df.columns]
-                st.error(f"Die Datei {file_name} fehlt folgende Spalten: {', '.join(missing_columns)}")
-
-        except Exception as e:
-            st.error(f"Fehler beim Verarbeiten der Datei {file_name}: {e}")
+        except Exception:
+            pass  # Keine Fehlermeldungen anzeigen
 
     # Gesamtergebnisse zusammenführen
     if all_results:
@@ -119,12 +123,6 @@ if uploaded_files:
         final_output_results = combined_results.drop(columns=columns_to_drop)
 
         combined_summary = pd.concat(all_summaries, ignore_index=True)
-
-        # Gesamte Zusammenfassung anzeigen
-        st.write("Kombinierte Suchergebnisse:")
-        st.dataframe(final_output_results)
-        st.write("Zusammenfassung nach KW:")
-        st.dataframe(combined_summary)
 
         # Ergebnisse in eine Excel-Datei exportieren
         output = BytesIO()
@@ -140,30 +138,7 @@ if uploaded_files:
 
             # Zusammenfassung nach KW
             summary_worksheet = writer.book.add_worksheet("Zusammenfassung")
-            combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=1)
-
-            # Formatierungen hinzufügen
-            header_format = writer.book.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
-            blue_format = writer.book.add_format({'bg_color': '#E3F2FD', 'border': 1})
-            green_format = writer.book.add_format({'bg_color': '#E8F5E9', 'border': 1})
-
-            # Formatierung der Kopfzeile
-            for col_idx, column_name in enumerate(combined_summary.columns):
-                summary_worksheet.write(0, col_idx, column_name, header_format)
-
-            # Zeilen formatieren mit Trennung nach KW
-            current_kw = None
-            current_format = green_format
-            for row_idx in range(len(combined_summary)):
-                kw = combined_summary.iloc[row_idx, 0]  # KW-Wert
-                if kw != current_kw:
-                    current_kw = kw
-                    # Abwechselndes Farbschema pro KW
-                    current_format = green_format if current_format == blue_format else blue_format
-
-                # Zellen formatieren
-                for col_idx in range(len(combined_summary.columns)):
-                    summary_worksheet.write(row_idx + 1, col_idx, combined_summary.iloc[row_idx, col_idx], current_format)
+            combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=2)
 
             # Auto-Spaltenbreite für Zusammenfassung
             for col_idx, column_name in enumerate(combined_summary.columns):
