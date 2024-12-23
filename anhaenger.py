@@ -195,8 +195,8 @@ if combined_results is not None and combined_summary is not None:
             )
             summary_sheet.set_column(col_num, col_num, max_content_width + 2)
         def create_excel_report(combined_results, combined_summary):
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+           output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         # Blatt 1: Suchergebnisse
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
 
