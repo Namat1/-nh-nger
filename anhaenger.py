@@ -205,12 +205,11 @@ if combined_results is not None and combined_summary is not None:
             for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
                 vehicle_sheet.write(row_num + 1, col_num, value, row_format)
 
-        # Download-Button für die Excel-Datei
         st.download_button(
-            label="Kombinierte Ergebnisse als Excel herunterladen",
-            data=output.getvalue(),
-            file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        label="Kombinierte Ergebnisse als Excel herunterladen",
+        data=output.getvalue(),
+        file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 
