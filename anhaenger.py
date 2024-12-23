@@ -114,14 +114,13 @@ if uploaded_files:
             st.error(f"Fehler beim Verarbeiten der Datei {file_name}: {e}")
 
     # Gesamtergebnisse zusammenführen
-    if all_results:
-        combined_results = pd.concat(all_results, ignore_index=True)
-        combined_summary = pd.concat(all_summaries, ignore_index=True)
+if all_results:
+    combined_results = pd.concat(all_results, ignore_index=True)
 
-        # Sortierung der Zusammenfassung nach numerischer KW
-        combined_summary['KW_Numeric'] = combined_summary['KW'].str.extract(r'(\d+)').astype(int)
-        combined_summary = combined_summary.sort_values(by=['KW_Numeric', 'Nachname', 'Vorname'])
-        combined_summary = combined_summary.drop(columns=['KW_Numeric'])  # Entfernen Sie die Hilfsspalte
+    # Sortierung der Ergebnisse nach numerischer KW
+    combined_results['KW_Numeric'] = combined_results['KW'].str.extract(r'(\d+)').astype(int)
+    combined_results = combined_results.sort_values(by=['KW_Numeric']).drop(columns=['KW_Numeric'])
+
 
 
     # Fortschrittsanzeige schließen und "FERTIG" anzeigen
