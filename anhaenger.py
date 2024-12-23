@@ -86,6 +86,7 @@ if uploaded_files:
                 # Euro-Zeichen hinzufügen
                 final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
 
+
                 final_results['KW'] = kalenderwoche  # KW zur Ergebnis-Tabelle hinzufügen
 
                 # Zeilen mit 0 oder NaN in "Verdienst" entfernen
