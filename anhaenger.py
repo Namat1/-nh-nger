@@ -182,22 +182,18 @@ if combined_results is not None and combined_summary is not None:
             max_width = max(vehicle_grouped[column_name].astype(str).apply(len).max(), len(column_name), 10)
             vehicle_sheet.set_column(col_num, col_num, max_width + 2)
 
-        # Farben für die KW-Zeilen
-        kw_colors = ['#FFEB9C', '#D9EAD3', '#F4CCCC', '#CFE2F3', '#FFD966']
-        current_kw = None
-        current_color_index = 0
+        # Zeilen farblich nach KW formatieren (einschließlich der ersten beiden Spalten)
+for row_num in range(len(vehicle_grouped)):
+    kw = vehicle_grouped.iloc[row_num]['KW']
+    if kw != current_kw:
+        current_kw = kw
+        current_color_index = (current_color_index + 1) % len(kw_colors)
 
-        # Zeilen farblich nach KW formatieren
-        for row_num in range(len(vehicle_grouped)):
-            kw = vehicle_grouped.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_color_index = (current_color_index + 1) % len(kw_colors)
+    row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
 
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-
-            for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
-                vehicle_sheet.write(row_num + 1, col_num, value, row_format)
+    # Formatieren der gesamten Zeile (inkl. Kategorie und KW)
+    for col_num in range(len(vehicle_grouped.columns)):
+        vehicle_sheet.write(row_num + 1, col_num, vehicle_grouped.iloc[row_num, col_num], row_format)
 
         # Bold-Format für Kategorie und KW definieren
         bold_format = workbook.add_format({'bold': True})
