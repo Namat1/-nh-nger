@@ -217,6 +217,7 @@ for col_num, column_name in enumerate(vehicle_grouped.columns):
     worksheet.set_column(col_num, col_num, max_width + 2)
 
 
+
             st.download_button(
                 label="Kombinierte Ergebnisse als Excel herunterladen",
                 data=output.getvalue(),
