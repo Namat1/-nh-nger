@@ -16,7 +16,7 @@ combined_summary = None
 if uploaded_files:
     all_results = []  # Liste, um Ergebnisse zu speichern
     all_summaries = []  # Liste, um Zusammenfassungen zu speichern
-    
+
     progress_bar = st.progress(0)  # Fortschrittsbalken hinzufügen
     total_files = len(uploaded_files)
 
@@ -138,66 +138,21 @@ if combined_results is not None and combined_summary is not None:
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
 
         # Formatierungen hinzufügen
-        workbook = writer.book
         worksheet = writer.sheets['Suchergebnisse']
 
-        # Dynamische Formatierung basierend auf Kalenderwochen
-        unique_kws = combined_results['KW'].unique()
-        colors = ["#FFEB9C", "#D9EAD3", "#F4CCCC", "#CFE2F3", "#FFD966"]
-        formats = {kw: workbook.add_format({'bg_color': colors[i % len(colors)], 'border': 1}) for i, kw in enumerate(unique_kws)}
-        default_format = workbook.add_format({'border': 1})
+        # Spaltenbreite automatisch anpassen
+        for col_num, column_cells in enumerate(worksheet.iter_cols(min_row=1, max_col=worksheet.max_column, max_row=worksheet.max_row), start=1):
+            max_length = 0
+            for cell in column_cells:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except:
+                    pass
+            adjusted_width = max_length + 2
+            worksheet.set_column(col_num - 1, col_num - 1, adjusted_width)
 
-        # Spaltenbreite anpassen mit Mindestbreite
-        min_width = 10
-        for col_num, column_name in enumerate(combined_results.columns):
-            max_width = max(
-                combined_results[column_name].astype(str).map(len).max(),
-                len(column_name),
-                min_width
-            )
-            worksheet.set_column(col_num, col_num, max_width + 2)
-
-        # Daten farblich nach KW formatieren
-        for row_num, kw in enumerate(combined_results['KW'], start=1):
-            row_format = formats.get(kw, default_format)
-            worksheet.set_row(row_num, None, row_format)
-
-         # Zusammenfassung nach KW
-        summary_sheet = writer.book.add_worksheet("Zusammenfassung")
-        combined_summary.to_excel(writer, sheet_name="Zusammenfassung", index=False, startrow=1)
-
-        # Formatierungen hinzufügen
-        header_format = writer.book.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
-        blue_format = writer.book.add_format({'bg_color': '#76bef5', 'border': 1})
-        green_format = writer.book.add_format({'bg_color': '#6bff77', 'border': 1})
-
-        # Formatierung der Kopfzeile
-        for col_num, column_name in enumerate(combined_summary.columns):
-            summary_sheet.write(0, col_num, column_name, header_format)
-
-        # Zeilen farblich formatieren (abwechselnd nach KW)
-        current_kw = None
-        current_format = green_format
-        for row_num in range(len(combined_summary)):
-            kw = combined_summary.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_format = green_format if current_format == blue_format else blue_format
-
-            for col_num in range(len(combined_summary.columns)):
-                summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
-
-        # Automatische Spaltenbreite einstellen
-        for col_num, column_name in enumerate(combined_summary.columns):
-            max_content_width = max(
-                combined_summary[column_name].astype(str).apply(len).max(),
-                len(column_name)
-            )
-            summary_sheet.set_column(col_num, col_num, max_content_width + 2)
- 
-        
-
-        # Blatt 3: Fahrzeuggruppen
+       # Blatt 3: Fahrzeuggruppen
 combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
     lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
               "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
@@ -256,11 +211,7 @@ for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row, min_col=2, 
             break
 
 
-        
-        
-        
-
-
+    # Download-Link erstellen
     st.download_button(
         label="Kombinierte Ergebnisse als Excel herunterladen",
         data=output.getvalue(),
