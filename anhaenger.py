@@ -63,6 +63,7 @@ if uploaded_files:
                     'Unnamed: 6': 'Nachname 2',
                     'Unnamed: 7': 'Vorname 2',
                     'Unnamed: 11': 'Kennzeichen',
+                    'Unnamed: 12': 'Gz / GGL',
                     'Unnamed: 14': 'Art 2'
                 }
                 final_results = combined_results[required_columns].rename(columns=renamed_columns)
