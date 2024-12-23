@@ -146,7 +146,7 @@ if combined_results is not None and combined_summary is not None:
             for col_num in range(len(combined_summary.columns)):
                 summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
 
-        # Blatt 3: Fahrzeuggruppen
+                # Blatt 3: Fahrzeuggruppen
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
@@ -155,15 +155,26 @@ if combined_results is not None and combined_summary is not None:
             index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
             columns='Kennzeichen',
             values='Verdienst',
-            aggfunc='sum',
+            aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
             fill_value=0
         ).reset_index()
+
+        # Summenspalte hinzufügen
+        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
+
+        # Formatierung der Summenwerte mit €
+        for col in vehicle_grouped.columns[4:]:
+            vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
+        
+        # Tabelle im Excel speichern
         vehicle_grouped.to_excel(writer, sheet_name="Fahrzeuggruppen", index=False)
         vehicle_sheet = writer.sheets['Fahrzeuggruppen']
 
+        # Dynamische Spaltenbreite für Fahrzeuggruppen
         for col_num, column_name in enumerate(vehicle_grouped.columns):
             max_width = max(vehicle_grouped[column_name].astype(str).apply(len).max(), len(column_name), 10)
             vehicle_sheet.set_column(col_num, col_num, max_width + 2)
+
 
     st.download_button(
         label="Kombinierte Ergebnisse als Excel herunterladen",
