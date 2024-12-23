@@ -11,7 +11,6 @@ uploaded_files = st.file_uploader("Lade deine Excel- oder CSV-Dateien hoch", typ
 
 if uploaded_files:
     all_results = []  # Liste, um Ergebnisse zu speichern
-    all_summaries = []  # Liste, um Zusammenfassungen zu speichern
 
     for uploaded_file in uploaded_files:
         try:
@@ -83,9 +82,6 @@ if uploaded_files:
                 # Zeilen mit 0 oder NaN in "Verdienst" entfernen
                 final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
 
-                # Euro-Zeichen in den Suchergebnissen hinzufügen
-                final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
-
                 # KW zur Ergebnis-Tabelle hinzufügen
                 final_results['KW'] = kalenderwoche
 
@@ -99,11 +95,18 @@ if uploaded_files:
     if all_results:
         combined_results = pd.concat(all_results, ignore_index=True)
 
+        # Ergebnisse vorbereiten
+        combined_results['Verdienst'] = (
+            combined_results['Verdienst']
+            .replace(r'[^\d.]', '', regex=True)
+            .astype(float)
+        )
+        combined_results.fillna(0, inplace=True)
+
         # Ergebnisse in eine Excel-Datei exportieren
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            final_output_results = combined_results
-            final_output_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=1)
+            combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=1)
 
             workbook = writer.book
             worksheet = writer.sheets["Suchergebnisse"]
@@ -114,30 +117,31 @@ if uploaded_files:
             white_format = workbook.add_format({'bg_color': '#FFFFFF', 'border': 1})
 
             # Kopfzeile formatieren
-            for col_num, value in enumerate(final_output_results.columns):
+            for col_num, value in enumerate(combined_results.columns):
                 worksheet.write(0, col_num, value, header_format)
 
             # Zeilen formatieren
-            for row_num, row_data in enumerate(final_output_results.values, start=1):
+            for row_num, row_data in enumerate(combined_results.values, start=1):
                 row_format = blue_format if row_num % 2 == 0 else white_format
                 for col_num, cell_data in enumerate(row_data):
                     if isinstance(cell_data, (int, float)):
                         worksheet.write_number(row_num, col_num, cell_data, row_format)
                     elif isinstance(cell_data, str):
                         worksheet.write_string(row_num, col_num, cell_data, row_format)
-                    elif cell_data is None:
-                        worksheet.write_blank(row_num, col_num, None, row_format)
                     else:
-                        worksheet.write(row_num, col_num, str(cell_data), row_format)
+                        worksheet.write_blank(row_num, col_num, None, row_format)
 
             # Auto-Spaltenbreite anpassen
-            for col_num, column_name in enumerate(final_output_results.columns):
-                max_width = max(len(str(column_name)), final_output_results[column_name].astype(str).map(len).max())
+            for col_num, column_name in enumerate(combined_results.columns):
+                max_width = max(
+                    len(str(column_name)),
+                    combined_results[column_name].astype(str).map(len).max()
+                )
                 worksheet.set_column(col_num, col_num, max_width + 2)
 
-            # Speichern
             output.seek(0)
 
+        # Download-Button anzeigen
         st.download_button(
             label="Kombinierte Ergebnisse als Excel herunterladen",
             data=output.getvalue(),
