@@ -214,9 +214,9 @@ if combined_results is not None and combined_summary is not None:
             f.write(output.getvalue())
 
         # Download-Button für die Excel-Datei
-        st.download_button(
-            label="Kombinierte Ergebnisse als Excel herunterladen",
-            data=output.getvalue(),
-            file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+    st.download_button(
+        label="Kombinierte Ergebnisse als Excel herunterladen",
+        data=output.getvalue(),
+        file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
