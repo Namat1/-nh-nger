@@ -130,10 +130,22 @@ if uploaded_files:
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             # Suchergebnisse
+            worksheet = writer.book.add_worksheet("Suchergebnisse")
             final_output_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
 
+            # Auto-Spaltenbreite für Suchergebnisse
+            for col_idx, column_name in enumerate(final_output_results.columns):
+                max_content_width = max(final_output_results[column_name].astype(str).map(len).max(), len(column_name))
+                worksheet.set_column(col_idx, col_idx, max_content_width + 2)
+
             # Zusammenfassung nach KW
+            summary_worksheet = writer.book.add_worksheet("Zusammenfassung")
             combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=2)
+
+            # Auto-Spaltenbreite für Zusammenfassung
+            for col_idx, column_name in enumerate(combined_summary.columns):
+                max_content_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name))
+                summary_worksheet.set_column(col_idx, col_idx, max_content_width + 2)
 
         # Download-Button
         st.download_button(
