@@ -120,10 +120,13 @@ if uploaded_files:
             worksheet.write(0, 0, "Kombinierte Suchergebnisse")
             final_output_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
 
-            # Auto-Größe der Spalten in "Suchergebnisse"
-            for col_idx, column_name in enumerate(final_output_results.columns):
-                col_width = max(final_output_results[column_name].astype(str).map(len).max(), len(column_name))
-                worksheet.set_column(col_idx, col_idx, col_width)
+           # Verfeinerte Zellenbreitenanpassung
+for col_idx, column_name in enumerate(final_output_results.columns):
+    max_content_width = final_output_results[column_name].astype(str).map(len).max()
+    max_header_width = len(column_name)
+    adjusted_width = max(max_content_width, max_header_width) + 2  # Puffer von 2 Zeichen
+    worksheet.set_column(col_idx, col_idx, adjusted_width)
+
 
             # Zusammenfassung nach KW
             for kw in combined_summary['KW'].unique():
