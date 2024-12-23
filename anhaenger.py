@@ -187,30 +187,23 @@ if combined_results is not None and combined_summary is not None:
         current_kw = None
         current_color_index = 0
 
-        # Zeilen farblich nach KW formatieren
         for row_num in range(len(vehicle_grouped)):
-            kw = vehicle_grouped.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_color_index = (current_color_index + 1) % len(kw_colors)
+    kw = vehicle_grouped.iloc[row_num]['KW']
+    if kw != current_kw:  # Farbwechsel bei neuer KW
+        current_kw = kw
+        current_color_index = (current_color_index + 1) % len(kw_colors)
 
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+    # Definiere das Farbformat für die Zeile
+    row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+    bold_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'bold': True, 'border': 1})
 
-            for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
-                vehicle_sheet.write(row_num + 1, col_num, value, row_format)
+    # Formatierung der gesamten Zeile
+    for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
+        if col_num in [0, 1]:  # Kategorie und KW fett formatieren
+            vehicle_sheet.write(row_num + 1, col_num, value, bold_format)
+        else:  # Andere Spalten normal formatieren
+            vehicle_sheet.write(row_num + 1, col_num, value, row_format)
 
-        # Bold-Format für Kategorie und KW definieren
-        bold_format = workbook.add_format({'bold': True})
-
-        # Anwenden von Bold auf Kategorie- und KW-Spalte
-        for row_num in range(len(vehicle_grouped)):
-            # Erste Spalte (Index 0) - Kategorie
-            category = vehicle_grouped.iloc[row_num]['Kategorie']
-            vehicle_sheet.write(row_num + 1, 0, category, bold_format)  # Spalte 0 fett formatieren
-
-            # Zweite Spalte (Index 1) - KW
-            kw = vehicle_grouped.iloc[row_num]['KW']
-            vehicle_sheet.write(row_num + 1, 1, kw, bold_format)
 
     # Streamlit Download-Button
     output.seek(0)
