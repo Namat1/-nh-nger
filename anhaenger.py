@@ -103,6 +103,8 @@ if uploaded_files:
 if combined_results is not None and combined_summary is not None:
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        workbook = writer.book  # Wichtig: Innerhalb des with-Blocks
+
         # Blatt 1: Suchergebnisse
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
 
