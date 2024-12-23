@@ -143,7 +143,14 @@ if uploaded_files:
             for row_num, row_data in enumerate(final_output_results.values, start=1):
                 row_format = blue_format if row_num % 2 == 0 else white_format
                 for col_num, cell_data in enumerate(row_data):
-                    worksheet.write(row_num, col_num, cell_data, row_format)
+                    if isinstance(cell_data, (int, float)):
+                        worksheet.write_number(row_num, col_num, cell_data, row_format)
+                    elif isinstance(cell_data, str):
+                        worksheet.write_string(row_num, col_num, cell_data, row_format)
+                    elif cell_data is None:
+                        worksheet.write_blank(row_num, col_num, None, row_format)
+                    else:
+                        worksheet.write(row_num, col_num, str(cell_data), row_format)
 
             # Auto-Spaltenbreite anpassen
             for col_num, column_name in enumerate(final_output_results.columns):
