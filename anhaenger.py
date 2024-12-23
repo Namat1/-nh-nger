@@ -135,22 +135,34 @@ if all_results:
             # Blatt 2: Zusammenfassung
             combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung")
             
-            # Blatt 3: Fahrzeuggruppen
-            combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
-                lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
-                          "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
-            )
-            vehicle_grouped = combined_results.groupby(['Kategorie', 'KW', 'Nachname', 'Vorname']).agg({
-                'Verdienst': 'sum'
-            }).reset_index()
-            vehicle_grouped['Verdienst'] = vehicle_grouped['Verdienst'].apply(lambda x: f"{x} €")
-            vehicle_grouped.to_excel(writer, sheet_name="Fahrzeuggruppen", index=False)
-            
-            # Automatische Spaltenbreite
-            worksheet = writer.sheets['Fahrzeuggruppen']
-            for col_num, column_name in enumerate(vehicle_grouped.columns):
-                max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name))
-                worksheet.set_column(col_num, col_num, max_width + 2)
+            # Gruppierung und Pivot-Tabelle für Fahrzeuggruppen
+combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
+    lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
+              "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
+)
+
+# Pivot-Tabelle erstellen: Fahrzeuge als Spalten
+vehicle_grouped = combined_results.pivot_table(
+    index=['Kategorie', 'KW', 'Nachname', 'Vorname'],  # Index (Zeilen)
+    columns='Kennzeichen',  # Fahrzeuge (Spalten)
+    values='Verdienst',  # Werte für Verdienst
+    aggfunc='sum',  # Summe für jede Kombination
+    fill_value=0  # Fehlende Werte mit 0 auffüllen
+).reset_index()
+
+# Optional: Formatierung für Euro-Zeichen
+for col in vehicle_grouped.columns[4:]:  # Fahrzeug-Spalten ab der 5. Spalte formatieren
+    vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x} €")
+
+# Hinzufügen der Fahrzeuggruppen-Tabelle zum Excel-Sheet
+vehicle_grouped.to_excel(writer, sheet_name="Fahrzeuggruppen", index=False)
+
+# Automatische Spaltenbreite für das Blatt
+worksheet = writer.sheets['Fahrzeuggruppen']
+for col_num, column_name in enumerate(vehicle_grouped.columns):
+    max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name))
+    worksheet.set_column(col_num, col_num, max_width + 2)
+
         
         st.download_button(
             label="Kombinierte Ergebnisse als Excel herunterladen",
