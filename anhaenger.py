@@ -121,16 +121,49 @@ if uploaded_files:
         combined_results = pd.concat(all_results, ignore_index=True)
         combined_summary = pd.concat(all_summaries, ignore_index=True)
 
-        st.write("Kombinierte Suchergebnisse:")
-        st.dataframe(combined_results)
-        st.write("Zusammenfassung nach KW:")
-        st.dataframe(combined_summary)
-
         # Ergebnisse in eine Excel-Datei exportieren
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
-            combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung")
+            # Suchergebnisse
+            worksheet = writer.book.add_worksheet("Suchergebnisse")
+            combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
+
+            # Auto-Spaltenbreite für Suchergebnisse
+            for col_idx, column_name in enumerate(combined_results.columns):
+                max_content_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name))
+                worksheet.set_column(col_idx, col_idx, max_content_width + 2)
+
+            # Zusammenfassung nach KW
+            summary_worksheet = writer.book.add_worksheet("Zusammenfassung")
+            combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=1)
+
+            # Formatierungen hinzufügen
+            header_format = writer.book.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
+            blue_format = writer.book.add_format({'bg_color': '#E3F2FD', 'border': 1})
+            green_format = writer.book.add_format({'bg_color': '#E8F5E9', 'border': 1})
+
+            # Formatierung der Kopfzeile
+            for col_idx, column_name in enumerate(combined_summary.columns):
+                summary_worksheet.write(0, col_idx, column_name, header_format)
+
+            # Zeilen formatieren mit Trennung nach KW
+            current_kw = None
+            current_format = green_format
+            for row_idx in range(len(combined_summary)):
+                kw = combined_summary.iloc[row_idx, 0]  # KW-Wert
+                if kw != current_kw:
+                    current_kw = kw
+                    # Abwechselndes Farbschema pro KW
+                    current_format = green_format if current_format == blue_format else blue_format
+
+                # Zellen formatieren
+                for col_idx in range(len(combined_summary.columns)):
+                    summary_worksheet.write(row_idx + 1, col_idx, combined_summary.iloc[row_idx, col_idx], current_format)
+
+            # Auto-Spaltenbreite für Zusammenfassung
+            for col_idx, column_name in enumerate(combined_summary.columns):
+                max_content_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name))
+                summary_worksheet.set_column(col_idx, col_idx, max_content_width + 2)
 
         st.download_button(
             label="Kombinierte Ergebnisse als Excel herunterladen",
