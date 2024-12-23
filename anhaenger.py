@@ -137,18 +137,19 @@ if combined_results is not None and combined_summary is not None:
         workbook = writer.book
         worksheet = writer.sheets['Suchergebnisse']
 
-        # Formate definieren
-        formats = {
-            'KW1': workbook.add_format({'bg_color': '#FFEB9C', 'border': 1}),
-            'KW2': workbook.add_format({'bg_color': '#D9EAD3', 'border': 1}),
-        }
+        # Dynamische Formatierung basierend auf Kalenderwochen
+        unique_kws = combined_results['KW'].unique()
+        colors = ["#FFEB9C", "#D9EAD3", "#F4CCCC", "#CFE2F3", "#FFD966"]
+        formats = {kw: workbook.add_format({'bg_color': colors[i % len(colors)], 'border': 1}) for i, kw in enumerate(unique_kws)}
         default_format = workbook.add_format({'border': 1})
 
-        # Spaltenbreite anpassen
+        # Spaltenbreite anpassen mit Mindestbreite
+        min_width = 10
         for col_num, column_name in enumerate(combined_results.columns):
             max_width = max(
                 combined_results[column_name].astype(str).map(len).max(),
-                len(column_name)
+                len(column_name),
+                min_width
             )
             worksheet.set_column(col_num, col_num, max_width + 2)
 
@@ -160,7 +161,14 @@ if combined_results is not None and combined_summary is not None:
         # Zusammenfassung
         combined_summary.to_excel(writer, sheet_name="Zusammenfassung", index=False, startrow=1)
 
-        header_format = workbook.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
+        header_format = workbook.add_format({
+            'bold': True,
+            'bg_color': '#D7E4BC',
+            'border': 1,
+            'font_size': 12,
+            'align': 'center',
+            'valign': 'vcenter'
+        })
         summary_sheet = writer.sheets['Zusammenfassung']
 
         for col_num, column_name in enumerate(combined_summary.columns):
@@ -175,6 +183,7 @@ if combined_results is not None and combined_summary is not None:
             summary_sheet.set_column(col_num, col_num, max_content_width + 2)
 
     st.download_button(
+
         label="Kombinierte Ergebnisse als Excel herunterladen",
         data=output.getvalue(),
         file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
