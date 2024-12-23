@@ -19,6 +19,7 @@ if uploaded_files:
 
     for uploaded_file in uploaded_files:
         try:
+            # Fortschrittsanzeige aktualisieren
             processed_files += 1
             progress_percentage = int((processed_files / total_files) * 100)
             progress_bar.progress(progress_percentage)
@@ -27,69 +28,81 @@ if uploaded_files:
             kw_match = re.search(r'KW(\d{1,2})', file_name, re.IGNORECASE)
             kalenderwoche = f"KW{kw_match.group(1)}" if kw_match else "Keine KW gefunden"
 
-            if uploaded_file.name.endswith(('.xlsx', '.xls')):
-                df = pd.read_excel(uploaded_file, sheet_name="Touren")
-            else:
-                df = pd.read_csv(uploaded_file)
+            try:
+                # Versuche, die Datei zu lesen
+                if uploaded_file.name.endswith(('.xlsx', '.xls')):
+                    df = pd.read_excel(uploaded_file, sheet_name="Touren")
+                else:
+                    df = pd.read_csv(uploaded_file)
+            except Exception as e:
+                st.error(f"Fehler beim Lesen der Datei {file_name}: {e}")
+                continue
 
-            search_numbers = ["602", "620", "350", "520", "156"]
-            search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]
+            # Benötigte Spalten prüfen
             required_columns = ['Unnamed: 0', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 6',
                                 'Unnamed: 7', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
+            if not all(col in df.columns for col in required_columns):
+                st.warning(f"Die Datei {file_name} enthält nicht alle benötigten Spalten. Sie wird übersprungen.")
+                continue
 
-            if all(col in df.columns for col in required_columns):
-                df['Unnamed: 11'] = df['Unnamed: 11'].astype(str)
-                df['Unnamed: 14'] = df['Unnamed: 14'].astype(str)
+            # Spalten vorbereiten
+            df['Unnamed: 11'] = df['Unnamed: 11'].astype(str)
+            df['Unnamed: 14'] = df['Unnamed: 14'].astype(str)
 
-                number_matches = df[df['Unnamed: 11'].isin(search_numbers) & (df['Unnamed: 11'] != "607")]
-                text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) & (df['Unnamed: 11'] != "607")]
-                combined_results = pd.concat([number_matches, text_matches]).drop_duplicates()
+            # Filter nach Suchoptionen
+            search_numbers = ["602", "620", "350", "520", "156"]
+            search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]
 
-                renamed_columns = {
-                    'Unnamed: 0': 'Tour',
-                    'Unnamed: 3': 'Nachname',
-                    'Unnamed: 4': 'Vorname',
-                    'Unnamed: 6': 'Nachname 2',
-                    'Unnamed: 7': 'Vorname 2',
-                    'Unnamed: 11': 'Kennzeichen',
-                    'Unnamed: 12': 'Gz / GGL',
-                    'Unnamed: 14': 'Art 2'
-                }
-                final_results = combined_results[required_columns].rename(columns=renamed_columns)
-                final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
+            number_matches = df[df['Unnamed: 11'].isin(search_numbers) & (df['Unnamed: 11'] != "607")]
+            text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) & (df['Unnamed: 11'] != "607")]
+            combined_results = pd.concat([number_matches, text_matches]).drop_duplicates()
 
-                # Verdienst berechnen
-                payment_mapping = {"602": 40, "156": 40, "620": 20, "350": 20, "520": 20}
+            if combined_results.empty:
+                st.warning(f"Keine relevanten Daten in {file_name} gefunden. Datei wird übersprungen.")
+                continue
 
-                def calculate_payment(row):
-                    kennzeichen = row['Kennzeichen']
-                    art_2 = row['Art 2'].strip().upper()
-                    return payment_mapping.get(kennzeichen, 0) if art_2 == "AZ" else 0
+            # Spalten umbenennen
+            renamed_columns = {
+                'Unnamed: 0': 'Tour',
+                'Unnamed: 3': 'Nachname',
+                'Unnamed: 4': 'Vorname',
+                'Unnamed: 6': 'Nachname 2',
+                'Unnamed: 7': 'Vorname 2',
+                'Unnamed: 11': 'Kennzeichen',
+                'Unnamed: 12': 'Gz / GGL',
+                'Unnamed: 14': 'Art 2'
+            }
+            final_results = combined_results[required_columns].rename(columns=renamed_columns)
+            final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
 
-                final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
-                final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
-                final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
-                final_results['KW'] = kalenderwoche
-                all_results.append(final_results)
+            # Verdienst berechnen
+            payment_mapping = {"602": 40, "156": 40, "620": 20, "350": 20, "520": 20}
 
-                # Zusammenfassung erstellen
-                summary = final_results.copy()
-                summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)
-                summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
-                summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x} €")
-                summary = summary.drop(columns=['Verdienst'])
-                summary = summary.drop_duplicates()  # Entferne doppelte Zeilen
-                all_summaries.append(summary)
-        except Exception:
-            pass
+            def calculate_payment(row):
+                kennzeichen = row['Kennzeichen']
+                art_2 = row['Art 2'].strip().upper()
+                return payment_mapping.get(kennzeichen, 0) if art_2 == "AZ" else 0
+
+            final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
+            final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
+            final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
+            final_results['KW'] = kalenderwoche
+            all_results.append(final_results)
+
+            # Zusammenfassung erstellen
+            summary = final_results.copy()
+            summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)
+            summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
+            summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x} €")
+            summary = summary.drop(columns=['Verdienst'])
+            summary = summary.drop_duplicates()  # Entferne doppelte Zeilen
+            all_summaries.append(summary)
+        except Exception as e:
+            st.error(f"Ein unerwarteter Fehler ist bei {file_name} aufgetreten: {e}")
 
     if all_results:
-        combined_results = pd.concat(all_results, ignore_index=True)
-        combined_results = combined_results.drop_duplicates()  # Entferne doppelte Zeilen
-        combined_results = combined_results.dropna()  # Entferne leere Zeilen
-        combined_summary = pd.concat(all_summaries, ignore_index=True)
-        combined_summary = combined_summary.drop_duplicates()  # Entferne doppelte Zeilen
-        combined_summary = combined_summary.dropna()  # Entferne leere Zeilen
+        combined_results = pd.concat(all_results, ignore_index=True).drop_duplicates().dropna()
+        combined_summary = pd.concat(all_summaries, ignore_index=True).drop_duplicates().dropna()
 
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
