@@ -137,16 +137,22 @@ if uploaded_files:
                     lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                               "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
                 )
+                # Pivot-Tabelle erstellen: Fahrzeuge als Spalten
                 vehicle_grouped = combined_results.pivot_table(
-                    index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
-                    columns='Kennzeichen',
-                    values='Verdienst',
-                    aggfunc='sum',
-                    fill_value=0
+                    index=['Kategorie', 'KW', 'Nachname', 'Vorname'],  # Index (Zeilen)
+                    columns='Kennzeichen',  # Fahrzeuge (Spalten)
+                    values='Verdienst',  # Werte für Verdienst
+                    aggfunc='sum',  # Summe für jede Kombination
+                    fill_value=0  # Fehlende Werte mit 0 auffüllen
                 ).reset_index()
 
-                # Summenspalte hinzufügen
+                # Summenspalte hinzufügen (Summierung erfolgt vor der Formatierung)
                 vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
+
+                # Optional: Formatierung für Euro-Zeichen (nach der Summierung)
+                for col in vehicle_grouped.columns[4:]:
+                    vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
+
 
                 for col in vehicle_grouped.columns[4:]:
                     vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x} €")
