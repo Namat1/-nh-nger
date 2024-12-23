@@ -47,7 +47,7 @@ if uploaded_files:
                 df['Unnamed: 14'] = df['Unnamed: 14'].astype(str)
 
                 number_matches = df[df['Unnamed: 11'].isin(search_numbers) & (df['Unnamed: 11'] != "607")]
-                text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) &
+                text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) & 
                                   (df['Unnamed: 11'] != "607")]
                 combined_results_df = pd.concat([number_matches, text_matches]).drop_duplicates()
 
@@ -108,13 +108,49 @@ if combined_results is not None and combined_summary is not None:
         workbook = writer.book
         worksheet = writer.sheets['Suchergebnisse']
 
-        # Fahrzeuggruppen kategorisieren
+        unique_kws = combined_results['KW'].unique()
+        colors = ["#FFEB9C", "#D9EAD3", "#F4CCCC", "#CFE2F3", "#FFD966"]
+        formats = {kw: workbook.add_format({'bg_color': colors[i % len(colors)], 'border': 1}) for i, kw in enumerate(unique_kws)}
+        default_format = workbook.add_format({'border': 1})
+
+        for col_num, column_name in enumerate(combined_results.columns):
+            max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
+            worksheet.set_column(col_num, col_num, max_width + 2)
+
+        for row_num, kw in enumerate(combined_results['KW'], start=1):
+            row_format = formats.get(kw, default_format)
+            worksheet.set_row(row_num, None, row_format)
+
+        # Blatt 2: Zusammenfassung
+        combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
+        summary_sheet = writer.sheets['Auszahlung pro KW']
+
+        # Formatierungen hinzufügen
+        header_format = workbook.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
+        blue_format = workbook.add_format({'bg_color': '#76bef5', 'border': 1})
+        green_format = workbook.add_format({'bg_color': '#6bff77', 'border': 1})
+
+        for col_num, column_name in enumerate(combined_summary.columns):
+            max_width = max(combined_summary[column_name].astype(str).apply(len).max(), len(column_name), 10)
+            summary_sheet.set_column(col_num, col_num, max_width + 2)
+            summary_sheet.write(0, col_num, column_name, header_format)
+
+        current_kw = None
+        current_format = green_format
+        for row_num in range(len(combined_summary)):
+            kw = combined_summary.iloc[row_num]['KW']
+            if kw != current_kw:
+                current_kw = kw
+                current_format = green_format if current_format == blue_format else blue_format
+
+            for col_num in range(len(combined_summary.columns)):
+                summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
+
+                                        # Blatt 3: Fahrzeuggruppen
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
         )
-
-        # Pivot-Tabelle erstellen
         vehicle_grouped = combined_results.pivot_table(
             index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
             columns='Kennzeichen',
@@ -126,40 +162,27 @@ if combined_results is not None and combined_summary is not None:
         # Summenspalte hinzufügen
         vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
 
-        # Formatierung der Summenwerte mit €
-        for col in vehicle_grouped.columns[4:]:
-            vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
-
-        # Sortierung nach KW (numerisch)
-        vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
-        vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname'])
-        vehicle_grouped = vehicle_grouped.drop(columns=['KW_Numeric'])  # Sortierspalte entfernen
-
         # Tabelle im Excel speichern
         vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
         vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
 
-        # Dynamische Spaltenbreite
+        # Dynamische Spaltenbreite für Fahrzeuggruppen
         for col_num, column_name in enumerate(vehicle_grouped.columns):
-            max_width = max(vehicle_grouped[column_name].astype(str).apply(len).max(), len(column_name), 10)
+            max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
             vehicle_sheet.set_column(col_num, col_num, max_width + 2)
 
-        # Farben für die KW-Zeilen
-        kw_colors = ['#FFEB9C', '#D9EAD3', '#F4CCCC', '#CFE2F3', '#FFD966']
-        current_kw = None
-        current_color_index = 0
+        # Bold-Format für die 1. und 2. Spalte definieren
+        bold_format = workbook.add_format({'bold': True})
 
-        # Zeilen farblich nach KW formatieren (inkl. Kategorie und KW)
+        # Anwenden von Bold auf die 1. und 2. Spalte
         for row_num in range(len(vehicle_grouped)):
+            # Erste Spalte (Index 0) - Kategorie
+            category = vehicle_grouped.iloc[row_num]['Kategorie']
+            vehicle_sheet.write(row_num + 1, 0, category, bold_format)  # Spalte 0 fett formatieren
+
+            # Zweite Spalte (Index 1) - KW
             kw = vehicle_grouped.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_color_index = (current_color_index + 1) % len(kw_colors)
-
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-
-            for col_num in range(len(vehicle_grouped.columns)):
-                vehicle_sheet.write(row_num + 1, col_num, vehicle_grouped.iloc[row_num, col_num], row_format)
+            vehicle_sheet.write(row_num + 1, 1, kw, bold_format)  # Spalte 1 fett formatieren
 
     # Streamlit Download-Button
     output.seek(0)
