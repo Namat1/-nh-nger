@@ -26,7 +26,7 @@ if uploaded_files:
             file_name = uploaded_file.name
 
             # Kalenderwoche aus Dateinamen extrahieren
-            kw_match = re.search(r'KW(\\d{1,2})', file_name, re.IGNORECASE)
+            kw_match = re.search(r'KW(\d{1,2})', file_name, re.IGNORECASE)
             kalenderwoche = f"KW{kw_match.group(1)}" if kw_match else "Keine KW gefunden"
 
             # Datei lesen
@@ -47,7 +47,7 @@ if uploaded_files:
                 df['Unnamed: 14'] = df['Unnamed: 14'].astype(str)
 
                 number_matches = df[df['Unnamed: 11'].isin(search_numbers) & (df['Unnamed: 11'] != "607")]
-                text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) & 
+                text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) &
                                   (df['Unnamed: 11'] != "607")]
                 combined_results_df = pd.concat([number_matches, text_matches]).drop_duplicates()
 
@@ -90,11 +90,21 @@ if uploaded_files:
 
     if all_results:
         combined_results = pd.concat(all_results, ignore_index=True)
-        combined_results['KW_Numeric'] = combined_results['KW'].str.extract(r'(\\d+)').astype(int)
+
+        # Kalenderwoche numerisch extrahieren und Fehler vermeiden
+        combined_results['KW_Numeric'] = combined_results['KW'].str.extract(r'(\d+)')
+        combined_results['KW_Numeric'] = pd.to_numeric(combined_results['KW_Numeric'], errors='coerce').fillna(-1).astype(int)
+
+        # Ungültige Kalenderwochen entfernen
+        combined_results = combined_results[combined_results['KW_Numeric'] != -1]
+
+        # Sortieren nach KW, Nachname und Vorname
         combined_results = combined_results.sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
         combined_summary = pd.concat(all_summaries, ignore_index=True)
-        combined_summary['KW_Numeric'] = combined_summary['KW'].str.extract(r'(\\d+)').astype(int)
+        combined_summary['KW_Numeric'] = combined_summary['KW'].str.extract(r'(\d+)')
+        combined_summary['KW_Numeric'] = pd.to_numeric(combined_summary['KW_Numeric'], errors='coerce').fillna(-1).astype(int)
+        combined_summary = combined_summary[combined_summary['KW_Numeric'] != -1]
         combined_summary = combined_summary.sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
     progress_bar.empty()
@@ -140,7 +150,7 @@ if combined_results is not None and combined_summary is not None:
                 current_kw = kw
                 current_color_index = (current_color_index + 1) % len(kw_colors)
 
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+            row_format = writer.book.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
             for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
                 vehicle_sheet.write(row_num + 1, col_num, value, row_format)
 
