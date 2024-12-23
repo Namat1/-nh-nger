@@ -128,8 +128,10 @@ if uploaded_files:
                         worksheet.write_number(row_num, col_num, cell_data, row_format)
                     elif isinstance(cell_data, str):
                         worksheet.write_string(row_num, col_num, cell_data, row_format)
-                    else:
+                    elif cell_data is None:
                         worksheet.write_blank(row_num, col_num, None, row_format)
+                    else:
+                        worksheet.write_string(row_num, col_num, str(cell_data), row_format)
 
             # Auto-Spaltenbreite anpassen
             for col_num, column_name in enumerate(combined_results.columns):
