@@ -108,44 +108,6 @@ if combined_results is not None and combined_summary is not None:
         workbook = writer.book
         worksheet = writer.sheets['Suchergebnisse']
 
-        unique_kws = combined_results['KW'].unique()
-        colors = ["#FFEB9C", "#D9EAD3", "#F4CCCC", "#CFE2F3", "#FFD966"]
-        formats = {kw: workbook.add_format({'bg_color': colors[i % len(colors)], 'border': 1}) for i, kw in enumerate(unique_kws)}
-        default_format = workbook.add_format({'border': 1})
-
-        for col_num, column_name in enumerate(combined_results.columns):
-            max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
-            worksheet.set_column(col_num, col_num, max_width + 2)
-
-        for row_num, kw in enumerate(combined_results['KW'], start=1):
-            row_format = formats.get(kw, default_format)
-            worksheet.set_row(row_num, None, row_format)
-
-        # Blatt 2: Zusammenfassung
-        combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
-        summary_sheet = writer.sheets['Auszahlung pro KW']
-
-        # Formatierungen hinzufügen
-        header_format = workbook.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
-        blue_format = workbook.add_format({'bg_color': '#76bef5', 'border': 1})
-        green_format = workbook.add_format({'bg_color': '#6bff77', 'border': 1})
-
-        for col_num, column_name in enumerate(combined_summary.columns):
-            max_width = max(combined_summary[column_name].astype(str).apply(len).max(), len(column_name), 10)
-            summary_sheet.set_column(col_num, col_num, max_width + 2)
-            summary_sheet.write(0, col_num, column_name, header_format)
-
-        current_kw = None
-        current_format = green_format
-        for row_num in range(len(combined_summary)):
-            kw = combined_summary.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_format = green_format if current_format == blue_format else blue_format
-
-            for col_num in range(len(combined_summary.columns)):
-                summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
-
         # Fahrzeuggruppen kategorisieren
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
@@ -182,31 +144,22 @@ if combined_results is not None and combined_summary is not None:
             max_width = max(vehicle_grouped[column_name].astype(str).apply(len).max(), len(column_name), 10)
             vehicle_sheet.set_column(col_num, col_num, max_width + 2)
 
-        # Zeilen farblich nach KW formatieren (einschließlich der ersten beiden Spalten)
-for row_num in range(len(vehicle_grouped)):
-    kw = vehicle_grouped.iloc[row_num]['KW']
-    if kw != current_kw:
-        current_kw = kw
-        current_color_index = (current_color_index + 1) % len(kw_colors)
+        # Farben für die KW-Zeilen
+        kw_colors = ['#FFEB9C', '#D9EAD3', '#F4CCCC', '#CFE2F3', '#FFD966']
+        current_kw = None
+        current_color_index = 0
 
-    row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-
-    # Formatieren der gesamten Zeile (inkl. Kategorie und KW)
-    for col_num in range(len(vehicle_grouped.columns)):
-        vehicle_sheet.write(row_num + 1, col_num, vehicle_grouped.iloc[row_num, col_num], row_format)
-
-        # Bold-Format für Kategorie und KW definieren
-        bold_format = workbook.add_format({'bold': True})
-
-        # Anwenden von Bold auf Kategorie- und KW-Spalte
+        # Zeilen farblich nach KW formatieren (inkl. Kategorie und KW)
         for row_num in range(len(vehicle_grouped)):
-            # Erste Spalte (Index 0) - Kategorie
-            category = vehicle_grouped.iloc[row_num]['Kategorie']
-            vehicle_sheet.write(row_num + 1, 0, category, bold_format)  # Spalte 0 fett formatieren
-
-            # Zweite Spalte (Index 1) - KW
             kw = vehicle_grouped.iloc[row_num]['KW']
-            vehicle_sheet.write(row_num + 1, 1, kw, bold_format)
+            if kw != current_kw:
+                current_kw = kw
+                current_color_index = (current_color_index + 1) % len(kw_colors)
+
+            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+
+            for col_num in range(len(vehicle_grouped.columns)):
+                vehicle_sheet.write(row_num + 1, col_num, vehicle_grouped.iloc[row_num, col_num], row_format)
 
     # Streamlit Download-Button
     output.seek(0)
