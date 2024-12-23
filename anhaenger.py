@@ -23,7 +23,6 @@ if uploaded_files:
 
             # Dateiname extrahieren
             file_name = uploaded_file.name
-            st.write(f"Verarbeite Datei: {file_name}")
 
             # Kalenderwoche aus dem Dateinamen extrahieren
             kw_match = re.search(r'KW(\d{1,2})', file_name, re.IGNORECASE)
@@ -32,10 +31,8 @@ if uploaded_files:
             # Datei lesen
             if uploaded_file.name.endswith(('.xlsx', '.xls')):
                 df = pd.read_excel(uploaded_file, sheet_name="Touren")
-                st.success(f"Das Blatt 'Touren' aus {file_name} wurde erfolgreich geladen!")
             else:
                 df = pd.read_csv(uploaded_file)
-                st.success(f"CSV-Datei {file_name} wurde erfolgreich geladen!")
 
             # Automatische Suchoptionen
             search_numbers = ["602", "620", "350", "520", "156"]
@@ -109,10 +106,6 @@ if uploaded_files:
 
                 # Zusammenfassung in die Sammlung einfügen
                 all_summaries.append(summary)
-            else:
-                missing_columns = [col for col in required_columns if col not in df.columns]
-                st.error(f"Die Datei {file_name} fehlt folgende Spalten: {', '.join(missing_columns)}")
-
         except Exception as e:
             st.error(f"Fehler beim Verarbeiten der Datei {file_name}: {e}")
 
