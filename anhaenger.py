@@ -40,60 +40,59 @@ if uploaded_files:
                                 'Unnamed: 7', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
 
             if all(col in df.columns for col in required_columns):
-    # Spalten als Strings behandeln
-    df['Unnamed: 11'] = df['Unnamed: 11'].astype(str)
-    df['Unnamed: 14'] = df['Unnamed: 14'].astype(str)
+                # Spalten als Strings behandeln
+                df['Unnamed: 11'] = df['Unnamed: 11'].astype(str)
+                df['Unnamed: 14'] = df['Unnamed: 14'].astype(str)
 
-    # Filter nach Suchoptionen
-    number_matches = df[
-        df['Unnamed: 11'].isin(search_numbers) &
-        (df['Unnamed: 11'] != "607")
-    ]
-    text_matches = df[
-        df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) &
-        (df['Unnamed: 11'] != "607")
-    ]
-    combined_results = pd.concat([number_matches, text_matches]).drop_duplicates()
+                # Filter nach Suchoptionen
+                number_matches = df[
+                    df['Unnamed: 11'].isin(search_numbers) & 
+                    (df['Unnamed: 11'] != "607")
+                ]
+                text_matches = df[
+                    df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) &
+                    (df['Unnamed: 11'] != "607")
+                ]
+                combined_results = pd.concat([number_matches, text_matches]).drop_duplicates()
 
-    # Spalten extrahieren und umbenennen
-    renamed_columns = {
-        'Unnamed: 0': 'Tour',
-        'Unnamed: 3': 'Nachname',
-        'Unnamed: 4': 'Vorname',
-        'Unnamed: 6': 'Nachname 2',
-        'Unnamed: 7': 'Vorname 2',
-        'Unnamed: 11': 'Kennzeichen',
-        'Unnamed: 12': 'Gz / GGL',
-        'Unnamed: 14': 'Art 2'
-    }
-    final_results = combined_results[required_columns].rename(columns=renamed_columns)
+                # Spalten extrahieren und umbenennen
+                renamed_columns = {
+                    'Unnamed: 0': 'Tour',
+                    'Unnamed: 3': 'Nachname',
+                    'Unnamed: 4': 'Vorname',
+                    'Unnamed: 6': 'Nachname 2',
+                    'Unnamed: 7': 'Vorname 2',
+                    'Unnamed: 11': 'Kennzeichen',
+                    'Unnamed: 12': 'Gz / GGL',
+                    'Unnamed: 14': 'Art 2'
+                }
+                final_results = combined_results[required_columns].rename(columns=renamed_columns)
 
-    # Sortieren und Verdienst berechnen
-    final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
-    payment_mapping = {"602": 40, "156": 40, "620": 20, "350": 20, "520": 20}
+                # Sortieren und Verdienst berechnen
+                final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
+                payment_mapping = {"602": 40, "156": 40, "620": 20, "350": 20, "520": 20}
 
-    def calculate_payment(row):
-        kennzeichen = row['Kennzeichen']
-        art_2 = row['Art 2'].strip().upper()
-        return payment_mapping.get(kennzeichen, 0) if art_2 == "AZ" else 0
+                def calculate_payment(row):
+                    kennzeichen = row['Kennzeichen']
+                    art_2 = row['Art 2'].strip().upper()
+                    return payment_mapping.get(kennzeichen, 0) if art_2 == "AZ" else 0
 
-    # Verdienst berechnen
-    final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
+                # Verdienst berechnen
+                final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
 
-    # Zeilen mit 0 oder NaN in "Verdienst" entfernen (Numerischer Vergleich)
-    final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
+                # Zeilen mit 0 oder NaN in "Verdienst" entfernen (Numerischer Vergleich)
+                final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
 
-    # Euro-Zeichen hinzufügen
-    final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
+                # Euro-Zeichen hinzufügen
+                final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
 
-    final_results['KW'] = kalenderwoche  # KW zur Ergebnis-Tabelle hinzufügen
+                final_results['KW'] = kalenderwoche  # KW zur Ergebnis-Tabelle hinzufügen
 
-    # Ergebnisse sammeln
-    all_results.append(final_results)
-    summary = final_results.groupby(['KW', 'Nachname', 'Vorname'])['Verdienst'].sum().reset_index()
-    summary = summary.rename(columns={"Verdienst": "Gesamtverdienst"})
-    all_summaries.append(summary)
-
+                # Ergebnisse sammeln
+                all_results.append(final_results)
+                summary = final_results.groupby(['KW', 'Nachname', 'Vorname'])['Verdienst'].sum().reset_index()
+                summary = summary.rename(columns={"Verdienst": "Gesamtverdienst"})
+                all_summaries.append(summary)
             else:
                 missing_columns = [col for col in required_columns if col not in df.columns]
                 st.error(f"Die Datei {file_name} fehlt folgende Spalten: {', '.join(missing_columns)}")
@@ -117,7 +116,7 @@ if uploaded_files:
         st.write("Zusammenfassung nach KW:")
         st.dataframe(combined_summary)
 
-                        # Ergebnisse in eine Excel-Datei exportieren
+        # Ergebnisse in eine Excel-Datei exportieren
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             # Suchergebnisse
