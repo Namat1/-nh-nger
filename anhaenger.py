@@ -110,31 +110,29 @@ if uploaded_files:
         st.write("Zusammenfassung nach KW:")
         st.dataframe(combined_summary)
 
-                # Ergebnisse in eine Excel-Datei exportieren
+                        # Ergebnisse in eine Excel-Datei exportieren
         output = BytesIO()
-       with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-           # Suchergebnisse
-           workbook = writer.book
-           worksheet = workbook.add_worksheet("Suchergebnisse")
-           writer.sheets["Suchergebnisse"] = worksheet
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            # Suchergebnisse
+            workbook = writer.book
+            worksheet = workbook.add_worksheet("Suchergebnisse")
+            writer.sheets["Suchergebnisse"] = worksheet
 
-          # Format für linkszentrierte Inhalte
-          left_align_format = workbook.add_format({'align': 'left'})
+            # Format für linkszentrierte Inhalte
+            left_align_format = workbook.add_format({'align': 'left'})
 
-          # Daten schreiben
-          final_output_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
+            # Daten schreiben
+            final_output_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
 
-          # Linkszentrierung für die erste Spalte
-          worksheet.set_column('A:A', None, left_align_format)  # Spalte A links ausrichten
+            # Linkszentrierung für die erste Spalte
+            worksheet.set_column('A:A', None, left_align_format)  # Spalte A links ausrichten
 
-          # Verfeinerte Zellenbreitenanpassung
-          for col_idx, column_name in enumerate(final_output_results.columns):
-              max_content_width = final_output_results[column_name].astype(str).map(len).max()
-              max_header_width = len(column_name)
-              adjusted_width = max(max_content_width, max_header_width) + 2  # Puffer von 2 Zeichen
-              worksheet.set_column(col_idx, col_idx, adjusted_width)
-
-
+            # Verfeinerte Zellenbreitenanpassung
+            for col_idx, column_name in enumerate(final_output_results.columns):
+                max_content_width = final_output_results[column_name].astype(str).map(len).max()
+                max_header_width = len(column_name)
+                adjusted_width = max(max_content_width, max_header_width) + 2  # Puffer von 2 Zeichen
+                worksheet.set_column(col_idx, col_idx, adjusted_width)
 
             # Zusammenfassung nach KW
             for kw in combined_summary['KW'].unique():
