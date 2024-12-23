@@ -194,31 +194,71 @@ if combined_results is not None and combined_summary is not None:
                 len(column_name)
             )
             summary_sheet.set_column(col_num, col_num, max_content_width + 2)
+ 
         
+
         # Blatt 3: Fahrzeuggruppen
-            combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
-                lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
-                          "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
-            )
-            vehicle_grouped = combined_results.pivot_table(
-                index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
-                columns='Kennzeichen',
-                values='Verdienst',
-                aggfunc='sum',
-                fill_value=0
-            ).reset_index()
+combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
+    lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
+              "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
+)
+vehicle_grouped = combined_results.pivot_table(
+    index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
+    columns='Kennzeichen',
+    values='Verdienst',
+    aggfunc='sum',
+    fill_value=0
+).reset_index()
 
-            # Sicherstellen, dass die Fahrzeugspalten numerisch sind
-            vehicle_grouped.iloc[:, 4:] = vehicle_grouped.iloc[:, 4:].apply(pd.to_numeric, errors='coerce')
+# Sicherstellen, dass die Fahrzeugspalten numerisch sind
+vehicle_grouped.iloc[:, 4:] = vehicle_grouped.iloc[:, 4:].apply(pd.to_numeric, errors='coerce')
 
-            # Summenspalte hinzufügen
-            vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
+# KW numerisch sortieren
+vehicle_grouped = vehicle_grouped.sort_values(by='KW')
 
-            # Formatierung für Euro
-            for col in vehicle_grouped.columns[4:]:
-                vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
-            vehicle_grouped.to_excel(writer, sheet_name="Fahrzeuggruppen", index=False)
+# Summenspalte hinzufügen
+vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
 
+# Formatierung für Euro
+for col in vehicle_grouped.columns[4:]:
+    vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
+
+# Daten in Excel schreiben
+vehicle_grouped.to_excel(writer, sheet_name="Fahrzeuggruppen", index=False)
+worksheet = writer.sheets["Fahrzeuggruppen"]
+
+# Spaltenbreite automatisch anpassen
+for column_cells in worksheet.columns:
+    max_length = 0
+    column = column_cells[0].column_letter  # Get the column name
+    for cell in column_cells:
+        try:  # Necessary to avoid issues with empty cells
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        except:
+            pass
+    adjusted_width = max_length + 2
+    worksheet.column_dimensions[column].width = adjusted_width
+
+# Farbige Hervorhebung nach KW
+kw_colors = {
+    range(0, 100): 'FFB3E5FC',  # Hellblau
+    range(100, 200): 'FFC8E6C9',  # Hellgrün
+    range(200, 300): 'FFFFF9C4',  # Hellgelb
+}
+
+for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row, min_col=2, max_col=2):
+    kw_cell = row[0]
+    kw_value = int(kw_cell.value)
+    for kw_range, color in kw_colors.items():
+        if kw_value in kw_range:
+            kw_cell.fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
+            break
+
+
+        
+        
+        
 
 
     st.download_button(
