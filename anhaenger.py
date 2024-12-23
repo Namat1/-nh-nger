@@ -140,9 +140,9 @@ if combined_results is not None and combined_summary is not None:
         combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=1)
 
         # Formatierungen hinzufügen
-        header_format = writer.book.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
-        blue_format = writer.book.add_format({'bg_color': '#E3F2FD', 'border': 1})
-        green_format = writer.book.add_format({'bg_color': '#E8F5E9', 'border': 1})
+        header_format = writer.book.add_format({'bold': True, 'bg_color': '#b1c588', 'border': 1})
+        blue_format = writer.book.add_format({'bg_color': '#67aadb', 'border': 1})
+        green_format = writer.book.add_format({'bg_color': '#8cba8f', 'border': 1})
 
         # Formatierung der Kopfzeile
         for col_idx, column_name in enumerate(combined_summary.columns):
