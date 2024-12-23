@@ -131,49 +131,34 @@ if combined_results is not None and combined_summary is not None:
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         # Suchergebnisse
-        search_sheet = writer.book.add_worksheet("Suchergebnisse")
-        combined_results.to_excel(writer, sheet_name="Suchergebnisse", index=False, startrow=1)
+        combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
+
+        # Zusammenfassung nach KW
+        summary_sheet = writer.book.add_worksheet("Zusammenfassung")
+        combined_summary.to_excel(writer, sheet_name="Zusammenfassung", index=False, startrow=1)
 
         # Formatierungen hinzufügen
         header_format = writer.book.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
         blue_format = writer.book.add_format({'bg_color': '#E3F2FD', 'border': 1})
         green_format = writer.book.add_format({'bg_color': '#E8F5E9', 'border': 1})
 
-        # Suchergebnisse - Kopfzeile formatieren
-        for col_num, column_name in enumerate(combined_results.columns):
-            search_sheet.write(0, col_num, column_name, header_format)
-
-        # Suchergebnisse - Zeilen farbig formatieren
-        current_format = blue_format
-        for row_num in range(len(combined_results)):
-            current_format = green_format if current_format == blue_format else blue_format
-            for col_num in range(len(combined_results.columns)):
-                search_sheet.write(row_num + 1, col_num, combined_results.iloc[row_num, col_num], current_format)
-
-        # Automatische Spaltenbreite für Suchergebnisse
-        for col_num, column_name in enumerate(combined_results.columns):
-            max_content_width = max(
-                combined_results[column_name].astype(str).apply(len).max(),
-                len(column_name)
-            )
-            search_sheet.set_column(col_num, col_num, max_content_width + 2)
-
-        # Zusammenfassung
-        summary_sheet = writer.book.add_worksheet("Zusammenfassung")
-        combined_summary.to_excel(writer, sheet_name="Zusammenfassung", index=False, startrow=1)
-
-        # Zusammenfassung - Kopfzeile formatieren
+        # Formatierung der Kopfzeile
         for col_num, column_name in enumerate(combined_summary.columns):
             summary_sheet.write(0, col_num, column_name, header_format)
 
-        # Zusammenfassung - Zeilen farbig formatieren
-        current_format = blue_format
+        # Zeilen farblich formatieren (abwechselnd nach KW)
+        current_kw = None
+        current_format = green_format
         for row_num in range(len(combined_summary)):
-            current_format = green_format if current_format == blue_format else blue_format
+            kw = combined_summary.iloc[row_num]['KW']
+            if kw != current_kw:
+                current_kw = kw
+                current_format = green_format if current_format == blue_format else blue_format
+
             for col_num in range(len(combined_summary.columns)):
                 summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
 
-        # Automatische Spaltenbreite für Zusammenfassung
+        # Automatische Spaltenbreite einstellen
         for col_num, column_name in enumerate(combined_summary.columns):
             max_content_width = max(
                 combined_summary[column_name].astype(str).apply(len).max(),
