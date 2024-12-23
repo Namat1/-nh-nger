@@ -146,7 +146,7 @@ if combined_results is not None and combined_summary is not None:
             for col_num in range(len(combined_summary.columns)):
                 summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
 
-                # Blatt 3: Fahrzeuggruppen
+        # Blatt 3: Fahrzeuggruppen
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
@@ -185,14 +185,18 @@ if combined_results is not None and combined_summary is not None:
         current_kw = None
         current_color_index = 0
 
-        # Bold-Format für die KW-Spalte definieren
+        # Bold-Format für die 1. und 2. Spalte definieren
         bold_format = workbook.add_format({'bold': True})
 
-        # Anwenden von Bold auf die KW-Spalte
+        # Anwenden von Bold auf die 1. und 2. Spalte
         for row_num in range(len(vehicle_grouped)):
+            # Erste Spalte (Index 0) - Kategorie
+            category = vehicle_grouped.iloc[row_num]['Kategorie']
+            vehicle_sheet.write(row_num + 1, 0, category, bold_format)  # Spalte 0 fett formatieren
+
+            # Zweite Spalte (Index 1) - KW
             kw = vehicle_grouped.iloc[row_num]['KW']
-            # KW-Spalte fett formatieren (Annahme: KW ist in der zweiten Spalte)
-            vehicle_sheet.write(row_num + 1, 1, kw, bold_format)  # +1 wegen der Kopfzeile
+            vehicle_sheet.write(row_num + 1, 1, kw, bold_format)  # Spalte 1 fett formatieren
 
         # Zeilen farblich nach KW formatieren
         for row_num in range(len(vehicle_grouped)):
@@ -214,9 +218,9 @@ if combined_results is not None and combined_summary is not None:
             f.write(output.getvalue())
 
         # Download-Button für die Excel-Datei
-    st.download_button(
-        label="Kombinierte Ergebnisse als Excel herunterladen",
-        data=output.getvalue(),
-        file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+        st.download_button(
+            label="Kombinierte Ergebnisse als Excel herunterladen",
+            data=output.getvalue(),
+            file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
