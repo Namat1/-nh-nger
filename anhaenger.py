@@ -204,10 +204,10 @@ if combined_results is not None and combined_summary is not None:
         for row_num, kw in enumerate(vehicle_grouped['KW'], start=1):  # vehicle_grouped statt combined_results
             vehicle_sheet.write(row_num, 1, kw, bold_format)  # Annahme: KW ist in der zweiten Spalte
 
-        # Download-Button
         st.download_button(
-            label="Kombinierte Ergebnisse als Excel herunterladen",
-            data=output.getvalue(),
-            file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
+        label="Kombinierte Ergebnisse als Excel herunterladen",
+        data=output.getvalue(),
+        file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
