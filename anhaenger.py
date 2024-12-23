@@ -102,17 +102,28 @@ if uploaded_files:
             st.error(f"Fehler beim Verarbeiten der Datei {file_name}: {e}")
     
     # Gesamtergebnisse zusammenführen
-    if all_results:
-        combined_results = pd.concat(all_results, ignore_index=True)
-        combined_results['KW_Numeric'] = combined_results['KW'].str.extract(r'(\\d+)').astype(int)
-        combined_results = combined_results.sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
-        
-        combined_summary = pd.concat(all_summaries, ignore_index=True)
-        combined_summary['KW_Numeric'] = combined_summary['KW'].str.extract(r'(\\d+)').astype(int)
-        combined_summary = combined_summary.sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+if all_results:
+    combined_results = pd.concat(all_results, ignore_index=True)
     
-    progress_bar.empty()
-    st.success("FERTIG! Alle Dateien wurden verarbeitet.")
+    # Extrahiere Zahlen aus der KW-Spalte und konvertiere sie zu Integer
+    combined_results['KW_Numeric'] = (
+        combined_results['KW']
+        .str.extract(r'(\d+)')  # Extrahiere Zahlen
+        .fillna(0)  # Fülle NaN-Werte mit 0
+        .astype(int)  # Konvertiere in Integer
+    )
+    combined_results = combined_results.sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+
+    # Zusammenfassung verarbeiten
+    combined_summary = pd.concat(all_summaries, ignore_index=True)
+    combined_summary['KW_Numeric'] = (
+        combined_summary['KW']
+        .str.extract(r'(\d+)')  # Extrahiere Zahlen
+        .fillna(0)  # Fülle NaN-Werte mit 0
+        .astype(int)  # Konvertiere in Integer
+    )
+    combined_summary = combined_summary.sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+
     
     # Download-Bereich
     if combined_results is not None and combined_summary is not None:
