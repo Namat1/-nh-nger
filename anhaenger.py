@@ -146,7 +146,7 @@ if combined_results is not None and combined_summary is not None:
             for col_num, value in enumerate(combined_summary.iloc[row_num]):
                 summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
-        # Blatt 3: Auflistung Fahrzeuge
+        # Blatt 3: Auflistung Fahrzeuge (KW numerisch sortieren)
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
@@ -160,6 +160,12 @@ if combined_results is not None and combined_summary is not None:
         ).reset_index()
 
         vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
+
+        # KW numerisch sortieren
+        vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
+        vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+
+        # Excel-Formatierung und Schreiben
         vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
         vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
         for col_num, column_name in enumerate(vehicle_grouped.columns):
