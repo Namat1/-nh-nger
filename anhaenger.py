@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 import re
-import time
 
 # Titel der App
 st.title("Touren-Such-App für mehrere Dateien mit Zusammenfassung nach KW")
@@ -117,11 +116,6 @@ if uploaded_files:
     # Gesamtergebnisse zusammenführen
     if all_results:
         combined_results = pd.concat(all_results, ignore_index=True)
-
-        # Entfernen unerwünschter Spalten
-        columns_to_drop = [col for col in ['Datei', 'Art'] if col in combined_results.columns]
-        final_output_results = combined_results.drop(columns=columns_to_drop)
-
         combined_summary = pd.concat(all_summaries, ignore_index=True)
 
         # Ergebnisse in eine Excel-Datei exportieren
@@ -138,7 +132,27 @@ if uploaded_files:
 
             # Zusammenfassung nach KW
             summary_worksheet = writer.book.add_worksheet("Zusammenfassung")
-            combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=2)
+            combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=1)
+
+            # Farben und Formatierungen
+            header_format = writer.book.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
+            blue_format = writer.book.add_format({'bg_color': '#E3F2FD', 'border': 1})
+            green_format = writer.book.add_format({'bg_color': '#E8F5E9', 'border': 1})
+
+            # Kopfzeile formatieren
+            for col_idx, column_name in enumerate(combined_summary.columns):
+                summary_worksheet.write(0, col_idx, column_name, header_format)
+
+            # Zeilen mit KW-Trennung formatieren
+            current_kw = None
+            current_format = green_format
+            for row_idx in range(len(combined_summary)):
+                kw = combined_summary.iloc[row_idx, 0]
+                if kw != current_kw:
+                    current_kw = kw
+                    current_format = green_format if current_format == blue_format else blue_format
+                for col_idx in range(len(combined_summary.columns)):
+                    summary_worksheet.write(row_idx + 1, col_idx, combined_summary.iloc[row_idx, col_idx], current_format)
 
             # Auto-Spaltenbreite für Zusammenfassung
             for col_idx, column_name in enumerate(combined_summary.columns):
