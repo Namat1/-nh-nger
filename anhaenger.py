@@ -195,6 +195,54 @@ if combined_results is not None and combined_summary is not None:
             )
             summary_sheet.set_column(col_num, col_num, max_content_width + 2)
 
+    if combined_results is not None and combined_summary is not None:
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        # Suchergebnisse
+        combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
+
+        # Formatierungen hinzufügen
+        workbook = writer.book
+        worksheet = writer.sheets['Suchergebnisse']
+
+        # Dynamische Formatierung basierend auf Kalenderwochen
+        unique_kws = combined_results['KW'].unique()
+        colors = ["#FFEB9C", "#D9EAD3", "#F4CCCC", "#CFE2F3", "#FFD966"]
+        formats = {kw: workbook.add_format({'bg_color': colors[i % len(colors)], 'border': 1}) for i, kw in enumerate(unique_kws)}
+        default_format = workbook.add_format({'border': 1})
+
+        # Spaltenbreite anpassen mit Mindestbreite
+        min_width = 10
+        for col_num, column_name in enumerate(combined_results.columns):
+            max_width = max(
+                combined_results[column_name].astype(str).map(len).max(),
+                len(column_name),
+                min_width
+            )
+            worksheet.set_column(col_num, col_num, max_width + 2)
+
+        # Daten farblich nach KW formatieren
+        for row_num, kw in enumerate(combined_results['KW'], start=1):
+            row_format = formats.get(kw, default_format)
+            worksheet.set_row(row_num, None, row_format)
+
+        # Zusammenfassung
+        combined_summary.to_excel(writer, sheet_name="Zusammenfassung", index=False)
+
+        # Fahrzeugbasierte Aufschlüsselung
+        combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
+            lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
+                      "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
+        )
+
+        # Gruppierung und Aggregation
+        vehicle_grouped = combined_results.groupby(
+            ['Kategorie', 'KW', 'Nachname', 'Vorname']
+        ).agg({'Verdienst': 'count'}).reset_index()
+
+        # Erstellen eines dritten Blatts mit den Fahrzeuggruppen
+        vehicle_grouped.to_excel(writer, sheet_name="Fahrzeuggruppen", index=False)
+
     st.download_button(
         label="Kombinierte Ergebnisse als Excel herunterladen",
         data=output.getvalue(),
