@@ -103,12 +103,50 @@ if uploaded_files:
 if combined_results is not None and combined_summary is not None:
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        workbook = writer.book  # Wichtig: Innerhalb des with-Blocks
-
         # Blatt 1: Suchergebnisse
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
+        workbook = writer.book
+        worksheet = writer.sheets['Suchergebnisse']
 
-        # Blatt 3: Fahrzeuggruppen
+        unique_kws = combined_results['KW'].unique()
+        colors = ["#FFEB9C", "#D9EAD3", "#F4CCCC", "#CFE2F3", "#FFD966"]
+        formats = {kw: workbook.add_format({'bg_color': colors[i % len(colors)], 'border': 1}) for i, kw in enumerate(unique_kws)}
+        default_format = workbook.add_format({'border': 1})
+
+        for col_num, column_name in enumerate(combined_results.columns):
+            max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
+            worksheet.set_column(col_num, col_num, max_width + 2)
+
+        for row_num, kw in enumerate(combined_results['KW'], start=1):
+            row_format = formats.get(kw, default_format)
+            worksheet.set_row(row_num, None, row_format)
+
+        # Blatt 2: Zusammenfassung
+        combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
+        summary_sheet = writer.sheets['Auszahlung pro KW']
+
+        # Formatierungen hinzufügen
+        header_format = workbook.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
+        blue_format = workbook.add_format({'bg_color': '#76bef5', 'border': 1})
+        green_format = workbook.add_format({'bg_color': '#6bff77', 'border': 1})
+
+        for col_num, column_name in enumerate(combined_summary.columns):
+            max_width = max(combined_summary[column_name].astype(str).apply(len).max(), len(column_name), 10)
+            summary_sheet.set_column(col_num, col_num, max_width + 2)
+            summary_sheet.write(0, col_num, column_name, header_format)
+
+        current_kw = None
+        current_format = green_format
+        for row_num in range(len(combined_summary)):
+            kw = combined_summary.iloc[row_num]['KW']
+            if kw != current_kw:
+                current_kw = kw
+                current_format = green_format if current_format == blue_format else blue_format
+
+            for col_num in range(len(combined_summary.columns)):
+                summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
+
+                                        # Blatt 3: Fahrzeuggruppen
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
