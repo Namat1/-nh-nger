@@ -116,6 +116,11 @@ if uploaded_files:
     # Gesamtergebnisse zusammenführen
     if all_results:
         combined_results = pd.concat(all_results, ignore_index=True)
+
+        # **Final output results defined here**
+        columns_to_drop = [col for col in ['Datei', 'Art'] if col in combined_results.columns]
+        final_output_results = combined_results.drop(columns=columns_to_drop)
+
         combined_summary = pd.concat(all_summaries, ignore_index=True)
 
         # Ergebnisse in eine Excel-Datei exportieren
@@ -163,6 +168,4 @@ if uploaded_files:
         st.download_button(
             label="Kombinierte Ergebnisse als Excel herunterladen",
             data=output.getvalue(),
-            file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+           
