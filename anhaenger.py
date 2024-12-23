@@ -203,30 +203,24 @@ if combined_results is not None and combined_summary is not None:
         # Blatt 2: Zusammenfassung
         combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung")
 
-        # **Hier kommt der Code für das dritte Blatt: Fahrzeuggruppen**
-        # Fahrzeugbasierte Gruppierung
-        combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
-            lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
-                      "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
-        )
-
-        # Gruppierung und Aggregation nach Fahrzeuggruppen
-        vehicle_grouped = combined_results.groupby(['Kategorie', 'KW', 'Nachname', 'Vorname']).agg({
-            'Verdienst': 'sum'
-        }).reset_index()
-
-        # Hinzufügen des dritten Blatts zur Excel-Datei
-        vehicle_grouped['Verdienst'] = vehicle_grouped['Verdienst'].apply(lambda x: f"{x} €")
-        vehicle_grouped.to_excel(writer, sheet_name="Fahrzeuggruppen", index=False)
-
-        # Automatische Spaltenbreite einstellen
-        worksheet = writer.sheets['Fahrzeuggruppen']
-        for col_num, column_name in enumerate(vehicle_grouped.columns):
-            max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name))
-            worksheet.set_column(col_num, col_num, max_width + 2)
-
-    output.seek(0)
-    return output
+        # Blatt 3: Fahrzeuggruppen (neuer Code)
+    combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
+        lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
+                  "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
+    )
+    
+    vehicle_grouped = combined_results.groupby(['Kategorie', 'KW', 'Nachname', 'Vorname']).agg({
+        'Verdienst': 'sum'
+    }).reset_index()
+    
+    vehicle_grouped['Verdienst'] = vehicle_grouped['Verdienst'].apply(lambda x: f"{x} €")
+    vehicle_grouped.to_excel(writer, sheet_name="Fahrzeuggruppen", index=False)
+    
+    # Automatische Spaltenbreite einstellen
+    worksheet = writer.sheets['Fahrzeuggruppen']
+    for col_num, column_name in enumerate(vehicle_grouped.columns):
+        max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name))
+        worksheet.set_column(col_num, col_num, max_width + 2)
 
     st.download_button(
         label="Kombinierte Ergebnisse als Excel herunterladen",
