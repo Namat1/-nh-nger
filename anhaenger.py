@@ -80,11 +80,12 @@ if uploaded_files:
                 # Verdienst berechnen
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
 
-                # Zeilen mit 0 oder NaN in "Verdienst" entfernen (Numerischer Vergleich)
-                final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
+               # Zeilen mit 0 oder NaN in "Verdienst" entfernen (Numerischer Vergleich)
+               final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
 
-                # Euro-Zeichen hinzufügen
-                final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
+               # Euro-Zeichen hinzufügen
+               final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
+
 
 
                 final_results['KW'] = kalenderwoche  # KW zur Ergebnis-Tabelle hinzufügen
