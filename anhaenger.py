@@ -120,7 +120,9 @@ if uploaded_files:
 
         # Sortierung der Zusammenfassung nach numerischer KW
         combined_summary['KW_Numeric'] = combined_summary['KW'].str.extract(r'(\d+)').astype(int)
-        combined_summary = combined_summary.sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+        combined_summary = combined_summary.sort_values(by=['KW_Numeric', 'Nachname', 'Vorname'])
+        combined_summary = combined_summary.drop(columns=['KW_Numeric'])  # Entfernen Sie die Hilfsspalte
+
 
     # Fortschrittsanzeige schließen und "FERTIG" anzeigen
     progress_bar.empty()  # Fortschrittsbalken entfernen
