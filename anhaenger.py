@@ -185,24 +185,25 @@ if combined_results is not None and combined_summary is not None:
         current_kw = None
         current_color_index = 0
 
-        # Zeilen farblich nach KW formatieren
-        for row_num in range(len(vehicle_grouped)):
-            kw = vehicle_grouped.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_color_index = (current_color_index + 1) % len(kw_colors)
-
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-
-            for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
-                vehicle_sheet.write(row_num + 1, col_num, value, row_format)
-
         # Bold-Format für die KW-Spalte definieren
-        bold_format = workbook.add_format({'bold': True})
+bold_format = workbook.add_format({'bold': True})
 
-        # Bold-Format auf die KW-Spalte anwenden
-        for row_num, kw in enumerate(vehicle_grouped['KW'], start=1):  # vehicle_grouped statt combined_results
-            vehicle_sheet.write(row_num, 1, kw, bold_format)  # Annahme: KW ist in der zweiten Spalte
+# Bold-Format auf die KW-Spalte anwenden
+for row_num, kw in enumerate(vehicle_grouped['KW'], start=1):  # vehicle_grouped statt combined_results
+    # Annahme: KW ist in der zweiten Spalte
+    vehicle_sheet.write(row_num, 1, kw, bold_format)
+
+# Zeilen farblich nach KW formatieren
+for row_num in range(len(vehicle_grouped)):
+    kw = vehicle_grouped.iloc[row_num]['KW']
+    if kw != current_kw:
+        current_kw = kw
+        current_color_index = (current_color_index + 1) % len(kw_colors)
+
+    row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+
+    for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
+        vehicle_sheet.write(row_num + 1, col_num, value, row_format)
 
         st.download_button(
         label="Kombinierte Ergebnisse als Excel herunterladen",
