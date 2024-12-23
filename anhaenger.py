@@ -93,7 +93,9 @@ if uploaded_files:
                 all_results.append(final_results)
 
                 # Zusammenfassung erstellen (numerisch summieren)
-                summary = final_results.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
+                summary = final_results.copy()
+                summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)  # Entferne Euro-Zeichen
+                summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
 
                 # Euro-Zeichen hinzufügen in der Zusammenfassung und Spalte umbenennen
                 summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x} €")
