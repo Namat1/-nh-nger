@@ -14,21 +14,18 @@ combined_results = None
 combined_summary = None
 
 if uploaded_files:
-    all_results = []  # Liste, um Ergebnisse zu speichern
-    all_summaries = []  # Liste, um Zusammenfassungen zu speichern
-    
-    progress_bar = st.progress(0)  # Fortschrittsbalken hinzufügen
+    all_results = []  # Ergebnisse speichern
+    all_summaries = []  # Zusammenfassungen speichern
+
+    progress_bar = st.progress(0)  # Fortschrittsanzeige
     total_files = len(uploaded_files)
 
     for idx, uploaded_file in enumerate(uploaded_files):
         try:
-            # Fortschrittsanzeige aktualisieren
             progress_bar.progress((idx + 1) / total_files)
 
-            # Dateiname extrahieren
+            # Dateiname und KW extrahieren
             file_name = uploaded_file.name
-
-            # Kalenderwoche aus dem Dateinamen extrahieren
             kw_match = re.search(r'KW(\d{1,2})', file_name, re.IGNORECASE)
             kalenderwoche = f"KW{kw_match.group(1)}" if kw_match else "Keine KW gefunden"
 
@@ -45,24 +42,18 @@ if uploaded_files:
             # Benötigte Spalten prüfen
             required_columns = ['Unnamed: 0', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 6',
                                 'Unnamed: 7', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
-
             if all(col in df.columns for col in required_columns):
-                # Spalten als Strings behandeln
+                # Spalten konvertieren
                 df['Unnamed: 11'] = df['Unnamed: 11'].astype(str)
                 df['Unnamed: 14'] = df['Unnamed: 14'].astype(str)
 
-                # Filter nach Suchoptionen
-                number_matches = df[
-                    df['Unnamed: 11'].isin(search_numbers) & 
-                    (df['Unnamed: 11'] != "607")
-                ]
-                text_matches = df[
-                    df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) &
-                    (df['Unnamed: 11'] != "607")
-                ]
+                # Filter anwenden
+                number_matches = df[df['Unnamed: 11'].isin(search_numbers) & (df['Unnamed: 11'] != "607")]
+                text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) & 
+                                  (df['Unnamed: 11'] != "607")]
                 combined_results_df = pd.concat([number_matches, text_matches]).drop_duplicates()
 
-                # Spalten extrahieren und umbenennen
+                # Spalten umbenennen
                 renamed_columns = {
                     'Unnamed: 0': 'Tour',
                     'Unnamed: 3': 'Nachname',
@@ -75,8 +66,7 @@ if uploaded_files:
                 }
                 final_results = combined_results_df[required_columns].rename(columns=renamed_columns)
 
-                # Sortieren und Verdienst berechnen
-                final_results = final_results.sort_values(by=['Nachname', 'Vorname'])
+                # Verdienst berechnen
                 payment_mapping = {"602": 40, "156": 40, "620": 20, "350": 20, "520": 20}
 
                 def calculate_payment(row):
@@ -84,144 +74,44 @@ if uploaded_files:
                     art_2 = row['Art 2'].strip().upper()
                     return payment_mapping.get(kennzeichen, 0) if art_2 == "AZ" else 0
 
-                # Verdienst berechnen
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
-
-                # Zeilen mit 0 oder NaN in "Verdienst" entfernen
                 final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
-
-                # Euro-Zeichen in den Suchergebnissen hinzufügen
                 final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
-
-                # KW zur Ergebnis-Tabelle hinzufügen
                 final_results['KW'] = kalenderwoche
-
-                # Ergebnisse sammeln
                 all_results.append(final_results)
 
                 # Zusammenfassung erstellen
                 summary = final_results.copy()
                 summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)
                 summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
-
-                # Euro-Zeichen hinzufügen in der Zusammenfassung
                 summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x} €")
                 summary = summary.drop(columns=['Verdienst'])
-
-                # Zusammenfassung in die Sammlung einfügen
                 all_summaries.append(summary)
         except Exception as e:
             st.error(f"Fehler beim Verarbeiten der Datei {file_name}: {e}")
 
-    # Gesamtergebnisse zusammenführen
+    # Ergebnisse zusammenführen
     if all_results:
         combined_results = pd.concat(all_results, ignore_index=True)
-
-        # Sortierung der Suchergebnisse nach numerischer KW
         combined_results['KW_Numeric'] = combined_results['KW'].str.extract(r'(\d+)').astype(int)
         combined_results = combined_results.sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
-        # Sortierung der Zusammenfassung nach numerischer KW
         combined_summary = pd.concat(all_summaries, ignore_index=True)
         combined_summary['KW_Numeric'] = combined_summary['KW'].str.extract(r'(\d+)').astype(int)
         combined_summary = combined_summary.sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
-    # Fortschrittsanzeige schließen und "FERTIG" anzeigen
-    progress_bar.empty()  # Fortschrittsbalken entfernen
+    progress_bar.empty()
     st.success("FERTIG! Alle Dateien wurden verarbeitet.")
 
-# Download-Bereich
+# Ergebnisse exportieren
 if combined_results is not None and combined_summary is not None:
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        # Suchergebnisse
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
-
-        # Formatierungen hinzufügen
-        workbook = writer.book
-        worksheet = writer.sheets['Suchergebnisse']
-
-        # Dynamische Formatierung basierend auf Kalenderwochen
-        unique_kws = combined_results['KW'].unique()
-        colors = ["#FFEB9C", "#D9EAD3", "#F4CCCC", "#CFE2F3", "#FFD966"]
-        formats = {kw: workbook.add_format({'bg_color': colors[i % len(colors)], 'border': 1}) for i, kw in enumerate(unique_kws)}
-        default_format = workbook.add_format({'border': 1})
-
-        # Spaltenbreite anpassen mit Mindestbreite
-        min_width = 10
-        for col_num, column_name in enumerate(combined_results.columns):
-            max_width = max(
-                combined_results[column_name].astype(str).map(len).max(),
-                len(column_name),
-                min_width
-            )
-            worksheet.set_column(col_num, col_num, max_width + 2)
-
-        # Daten farblich nach KW formatieren
-        for row_num, kw in enumerate(combined_results['KW'], start=1):
-            row_format = formats.get(kw, default_format)
-            worksheet.set_row(row_num, None, row_format)
-
-         # Zusammenfassung nach KW
-        summary_sheet = writer.book.add_worksheet("Zusammenfassung")
-        combined_summary.to_excel(writer, sheet_name="Zusammenfassung", index=False, startrow=1)
-
-        # Formatierungen hinzufügen
-        header_format = writer.book.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
-        blue_format = writer.book.add_format({'bg_color': '#76bef5', 'border': 1})
-        green_format = writer.book.add_format({'bg_color': '#6bff77', 'border': 1})
-
-        # Formatierung der Kopfzeile
-        for col_num, column_name in enumerate(combined_summary.columns):
-            summary_sheet.write(0, col_num, column_name, header_format)
-
-        # Zeilen farblich formatieren (abwechselnd nach KW)
-        current_kw = None
-        current_format = green_format
-        for row_num in range(len(combined_summary)):
-            kw = combined_summary.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_format = green_format if current_format == blue_format else blue_format
-
-            for col_num in range(len(combined_summary.columns)):
-                summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
-
-        # Automatische Spaltenbreite einstellen
-        for col_num, column_name in enumerate(combined_summary.columns):
-            max_content_width = max(
-                combined_summary[column_name].astype(str).apply(len).max(),
-                len(column_name)
-            )
-            summary_sheet.set_column(col_num, col_num, max_content_width + 2)
-
-        # Blatt 3: Fahrzeuggruppen
-            combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
-                lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
-                          "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
-            )
-            vehicle_grouped = combined_results.pivot_table(
-                index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
-                columns='Kennzeichen',
-                values='Verdienst',
-                aggfunc='sum',
-                fill_value=0
-            ).reset_index()
-
-            # Sicherstellen, dass die Fahrzeugspalten numerisch sind
-            vehicle_grouped.iloc[:, 4:] = vehicle_grouped.iloc[:, 4:].apply(pd.to_numeric, errors='coerce')
-
-            # Summenspalte hinzufügen
-            vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
-
-            # Formatierung für Euro
-            for col in vehicle_grouped.columns[4:]:
-                vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
-            vehicle_grouped.to_excel(writer, sheet_name="Fahrzeuggruppen", index=False)
-
-        st.download_button(
-            label="Kombinierte Ergebnisse als Excel herunterladen",
-            data=output.getvalue(),
-            file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung")
+    st.download_button(
+        label="Kombinierte Ergebnisse als Excel herunterladen",
+        data=output.getvalue(),
+        file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
