@@ -158,6 +158,14 @@ if combined_results is not None and combined_summary is not None:
             for col_num in range(len(combined_summary.columns)):
                 summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
 
+        # Automatische Spaltenbreite einstellen
+        for col_num, column_name in enumerate(combined_summary.columns):
+            max_content_width = max(
+                combined_summary[column_name].astype(str).apply(len).max(),
+                len(column_name)
+            )
+            summary_sheet.set_column(col_num, col_num, max_content_width + 2)
+
     st.download_button(
         label="Kombinierte Ergebnisse als Excel herunterladen",
         data=output.getvalue(),
