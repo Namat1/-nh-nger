@@ -122,8 +122,8 @@ if combined_results is not None and combined_summary is not None:
             worksheet.set_row(row_num, None, row_format)
 
         # Blatt 2: Zusammenfassung
-        combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung")
-        summary_sheet = writer.sheets['Zusammenfassung']
+        combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
+        summary_sheet = writer.sheets['Auszahlung pro KW']
 
         # Formatierungen hinzufügen
         header_format = workbook.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
@@ -172,8 +172,8 @@ if combined_results is not None and combined_summary is not None:
         vehicle_grouped = vehicle_grouped.drop(columns=['KW_Numeric'])  # Sortierspalte entfernen
 
         # Tabelle im Excel speichern
-        vehicle_grouped.to_excel(writer, sheet_name="Fahrzeuggruppen", index=False)
-        vehicle_sheet = writer.sheets['Fahrzeuggruppen']
+        vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
+        vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
 
         # Dynamische Spaltenbreite für Fahrzeuggruppen
         for col_num, column_name in enumerate(vehicle_grouped.columns):
