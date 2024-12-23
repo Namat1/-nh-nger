@@ -80,7 +80,7 @@ if uploaded_files:
                 # Verdienst berechnen
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
 
-                # Zeilen mit 0 oder NaN in "Verdienst" entfernen (Numerischer Vergleich)
+                # Zeilen mit 0 oder NaN in "Verdienst" entfernen
                 final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
 
                 # Euro-Zeichen in den Suchergebnissen hinzufügen
@@ -92,21 +92,6 @@ if uploaded_files:
                 # Ergebnisse sammeln
                 all_results.append(final_results)
 
-                # Zusammenfassung erstellen (numerisch summieren)
-                summary = final_results.copy()
-                summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)  # Entferne Euro-Zeichen
-                summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
-
-                # Euro-Zeichen hinzufügen in der Zusammenfassung und Spalte umbenennen
-                summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x} €")
-                summary = summary.drop(columns=['Verdienst'])  # Spalte 'Verdienst' entfernen
-
-                # Zusammenfassung in die Sammlung einfügen
-                all_summaries.append(summary)
-            else:
-                missing_columns = [col for col in required_columns if col not in df.columns]
-                st.error(f"Die Datei {file_name} fehlt folgende Spalten: {', '.join(missing_columns)}")
-
         except Exception as e:
             st.error(f"Fehler beim Verarbeiten der Datei {file_name}: {e}")
 
@@ -114,24 +99,17 @@ if uploaded_files:
     if all_results:
         combined_results = pd.concat(all_results, ignore_index=True)
 
-        # Entfernen unerwünschter Spalten
-        columns_to_drop = [col for col in ['Datei', 'Art'] if col in combined_results.columns]
-        final_output_results = combined_results.drop(columns=columns_to_drop)
-
-        combined_summary = pd.concat(all_summaries, ignore_index=True)
-
         # Ergebnisse in eine Excel-Datei exportieren
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            # Suchergebnisse
+            final_output_results = combined_results
             final_output_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=1)
+
             workbook = writer.book
             worksheet = writer.sheets["Suchergebnisse"]
 
             # Kopfzeilenformat
-            header_format = workbook.add_format({'bold': True, 'text_wrap': True, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#D9EAD3', 'border': 1})
-
-            # Alternierende Zeilenfarben
+            header_format = workbook.add_format({'bold': True, 'bg_color': '#D9EAD3', 'border': 1})
             blue_format = workbook.add_format({'bg_color': '#DDEBF7', 'border': 1})
             white_format = workbook.add_format({'bg_color': '#FFFFFF', 'border': 1})
 
@@ -160,7 +138,6 @@ if uploaded_files:
             # Speichern
             output.seek(0)
 
-        # Download-Button
         st.download_button(
             label="Kombinierte Ergebnisse als Excel herunterladen",
             data=output.getvalue(),
