@@ -116,6 +116,35 @@ if combined_results is not None and combined_summary is not None:
 
         combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung")
 
+        # Formatierungen hinzufügen
+        header_format = writer.book.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
+        blue_format = writer.book.add_format({'bg_color': '#76bef5', 'border': 1})
+        green_format = writer.book.add_format({'bg_color': '#6bff77', 'border': 1})
+
+        # Formatierung der Kopfzeile
+        for col_num, column_name in enumerate(combined_summary.columns):
+            summary_sheet.write(0, col_num, column_name, header_format)
+
+        # Zeilen farblich formatieren (abwechselnd nach KW)
+        current_kw = None
+        current_format = green_format
+        for row_num in range(len(combined_summary)):
+            kw = combined_summary.iloc[row_num]['KW']
+            if kw != current_kw:
+                current_kw = kw
+                current_format = green_format if current_format == blue_format else blue_format
+
+            for col_num in range(len(combined_summary.columns)):
+                summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
+
+        # Automatische Spaltenbreite einstellen
+        for col_num, column_name in enumerate(combined_summary.columns):
+            max_content_width = max(
+                combined_summary[column_name].astype(str).apply(len).max(),
+                len(column_name)
+            )
+            summary_sheet.set_column(col_num, col_num, max_content_width + 2)
+        
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
