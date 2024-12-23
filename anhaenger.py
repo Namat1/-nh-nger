@@ -146,7 +146,7 @@ if combined_results is not None and combined_summary is not None:
             for col_num in range(len(combined_summary.columns)):
                 summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
 
-                                        # Blatt 3: Fahrzeuggruppen
+        # Blatt 3: Fahrzeuggruppen
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
