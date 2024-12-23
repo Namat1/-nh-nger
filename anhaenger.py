@@ -133,30 +133,38 @@ if combined_results is not None and combined_summary is not None:
         # Suchergebnisse
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
 
-        # Zusammenfassung nach KW
-        summary_sheet = writer.book.add_worksheet("Zusammenfassung")
+        # Formatierungen hinzufügen
+        workbook = writer.book
+        worksheet = writer.sheets['Suchergebnisse']
+
+        # Formate definieren
+        formats = {
+            'KW1': workbook.add_format({'bg_color': '#FFEB9C', 'border': 1}),
+            'KW2': workbook.add_format({'bg_color': '#D9EAD3', 'border': 1}),
+        }
+        default_format = workbook.add_format({'border': 1})
+
+        # Spaltenbreite anpassen
+        for col_num, column_name in enumerate(combined_results.columns):
+            max_width = max(
+                combined_results[column_name].astype(str).map(len).max(),
+                len(column_name)
+            )
+            worksheet.set_column(col_num, col_num, max_width + 2)
+
+        # Daten farblich nach KW formatieren
+        for row_num, kw in enumerate(combined_results['KW'], start=1):
+            row_format = formats.get(kw, default_format)
+            worksheet.set_row(row_num, None, row_format)
+
+        # Zusammenfassung
         combined_summary.to_excel(writer, sheet_name="Zusammenfassung", index=False, startrow=1)
 
-        # Formatierungen hinzufügen
-        header_format = writer.book.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
-        blue_format = writer.book.add_format({'bg_color': '#76bef5', 'border': 1})
-        green_format = writer.book.add_format({'bg_color': '#6bff77', 'border': 1})
+        header_format = workbook.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
+        summary_sheet = writer.sheets['Zusammenfassung']
 
-        # Formatierung der Kopfzeile
         for col_num, column_name in enumerate(combined_summary.columns):
             summary_sheet.write(0, col_num, column_name, header_format)
-
-        # Zeilen farblich formatieren (abwechselnd nach KW)
-        current_kw = None
-        current_format = green_format
-        for row_num in range(len(combined_summary)):
-            kw = combined_summary.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_format = green_format if current_format == blue_format else blue_format
-
-            for col_num in range(len(combined_summary.columns)):
-                summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
 
         # Automatische Spaltenbreite einstellen
         for col_num, column_name in enumerate(combined_summary.columns):
