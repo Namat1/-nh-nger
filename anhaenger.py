@@ -107,13 +107,29 @@ if uploaded_files:
 if combined_results is not None and combined_summary is not None:
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        # Fahrzeuggruppen kategorisieren
+        # Blatt 1: Suchergebnisse
+        combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
+        workbook = writer.book
+        worksheet = writer.sheets['Suchergebnisse']
+
+        for col_num, column_name in enumerate(combined_results.columns):
+            max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
+            worksheet.set_column(col_num, col_num, max_width + 2)
+
+        # Blatt 2: Auszahlung pro KW
+        combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
+        summary_sheet = writer.sheets['Auszahlung pro KW']
+
+        # Spaltenbreite dynamisch anpassen
+        for col_num, column_name in enumerate(combined_summary.columns):
+            max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
+            summary_sheet.set_column(col_num, col_num, max_width + 2)
+
+        # Blatt 3: Auflistung Fahrzeuge
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
         )
-
-        # Pivot-Tabelle erstellen
         vehicle_grouped = combined_results.pivot_table(
             index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
             columns='Kennzeichen',
@@ -122,40 +138,15 @@ if combined_results is not None and combined_summary is not None:
             fill_value=0
         ).reset_index()
 
-        # Summenspalte hinzufügen
         vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
-
-        # Tabelle formatieren und schreiben
         vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
         vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
-        workbook = writer.book
 
-        # Dynamische Spaltenbreite
         for col_num, column_name in enumerate(vehicle_grouped.columns):
-            max_width = max(vehicle_grouped[column_name].astype(str).apply(len).max(), len(column_name), 10)
+            max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
             vehicle_sheet.set_column(col_num, col_num, max_width + 2)
 
-        # Zeilen farblich nach KW formatieren
-        kw_colors = ['#FFEB9C', '#D9EAD3', '#F4CCCC', '#CFE2F3', '#FFD966']
-        current_kw = None
-        current_color_index = 0
-
-        for row_num in range(len(vehicle_grouped)):
-            kw = vehicle_grouped.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_color_index = (current_color_index + 1) % len(kw_colors)
-
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-            bold_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'bold': True, 'border': 1})
-
-            for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
-                if col_num in [0, 1]:  # "Kategorie" und "KW"
-                    vehicle_sheet.write(row_num + 1, col_num, value, bold_format)
-                else:
-                    vehicle_sheet.write(row_num + 1, col_num, value, row_format)
-
-    # Download-Button
+    # Datei herunterladen
     output.seek(0)
     st.download_button(
         label="Kombinierte Ergebnisse als Excel herunterladen",
