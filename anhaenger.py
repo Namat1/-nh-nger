@@ -83,6 +83,9 @@ if uploaded_files:
                 # Zeilen mit 0 oder NaN in "Verdienst" entfernen (Numerischer Vergleich)
                 final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
 
+                # Euro-Zeichen in den Suchergebnissen hinzufügen
+                final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
+
                 # KW zur Ergebnis-Tabelle hinzufügen
                 final_results['KW'] = kalenderwoche
 
@@ -90,10 +93,11 @@ if uploaded_files:
                 all_results.append(final_results)
 
                 # Zusammenfassung erstellen (numerisch summieren)
-                summary = final_results.groupby(['KW', 'Nachname', 'Vorname'])['Verdienst'].sum().reset_index()
+                summary = final_results.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
 
-                # Euro-Zeichen hinzufügen in der Zusammenfassung
+                # Euro-Zeichen hinzufügen in der Zusammenfassung und Spalte umbenennen
                 summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x} €")
+                summary = summary.drop(columns=['Verdienst'])  # Spalte 'Verdienst' entfernen
 
                 # Zusammenfassung in die Sammlung einfügen
                 all_summaries.append(summary)
