@@ -197,6 +197,12 @@ if combined_results is not None and combined_summary is not None:
             for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
                 vehicle_sheet.write(row_num + 1, col_num, value, row_format)
 
+         # Define a bold format for the KW column
+         bold_format = workbook.add_format({'bold': True})
+
+         # Apply the bold format to the KW column
+         for row_num, kw in enumerate(combined_results['KW'], start=1):
+             worksheet.write(row_num, 0, kw, bold_format)  # Assuming 'KW' is in the first column
 
 
 
