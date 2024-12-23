@@ -110,23 +110,23 @@ if uploaded_files:
         st.write("Zusammenfassung nach KW:")
         st.dataframe(combined_summary)
 
-        # Ergebnisse in eine Excel-Datei exportieren
+                # Ergebnisse in eine Excel-Datei exportieren
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             # Suchergebnisse
             workbook = writer.book
             worksheet = workbook.add_worksheet("Suchergebnisse")
             writer.sheets["Suchergebnisse"] = worksheet
-            worksheet.write(0, 0, "Kombinierte Suchergebnisse")
+
+            # Daten schreiben
             final_output_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
 
-           # Verfeinerte Zellenbreitenanpassung
-for col_idx, column_name in enumerate(final_output_results.columns):
-    max_content_width = final_output_results[column_name].astype(str).map(len).max()
-    max_header_width = len(column_name)
-    adjusted_width = max(max_content_width, max_header_width) + 2  # Puffer von 2 Zeichen
-    worksheet.set_column(col_idx, col_idx, adjusted_width)
-
+            # Verfeinerte Zellenbreitenanpassung
+            for col_idx, column_name in enumerate(final_output_results.columns):
+                max_content_width = final_output_results[column_name].astype(str).map(len).max()
+                max_header_width = len(column_name)
+                adjusted_width = max(max_content_width, max_header_width) + 2  # Puffer von 2 Zeichen
+                worksheet.set_column(col_idx, col_idx, adjusted_width)
 
             # Zusammenfassung nach KW
             for kw in combined_summary['KW'].unique():
@@ -137,10 +137,12 @@ for col_idx, column_name in enumerate(final_output_results.columns):
                 # Schreiben der zusammengefassten Daten für jede KW
                 summary_by_kw.to_excel(writer, index=False, sheet_name=f"Zusammenfassung_{kw}", startrow=0)
 
-                # Auto-Größe der Spalten in den Zusammenfassungen
+                # Verfeinerte Zellenbreitenanpassung für Zusammenfassung
                 for col_idx, column_name in enumerate(summary_by_kw.columns):
-                    col_width = max(summary_by_kw[column_name].astype(str).map(len).max(), len(column_name))
-                    summary_worksheet.set_column(col_idx, col_idx, col_width)
+                    max_content_width = summary_by_kw[column_name].astype(str).map(len).max()
+                    max_header_width = len(column_name)
+                    adjusted_width = max(max_content_width, max_header_width) + 2  # Puffer von 2 Zeichen
+                    summary_worksheet.set_column(col_idx, col_idx, adjusted_width)
 
         # Download-Button
         st.download_button(
@@ -149,7 +151,3 @@ for col_idx, column_name in enumerate(final_output_results.columns):
             file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-    else:
-        st.warning("Keine Ergebnisse gefunden.")
-else:
-    st.info("Bitte lade mindestens eine Excel- oder CSV-Datei hoch, um zu starten.")
