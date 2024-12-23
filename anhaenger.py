@@ -146,7 +146,7 @@ if combined_results is not None and combined_summary is not None:
             for col_num in range(len(combined_summary.columns)):
                 summary_sheet.write(row_num + 1, col_num, combined_summary.iloc[row_num, col_num], current_format)
 
-                                        # Blatt 3: Fahrzeuggruppen
+        # Blatt 3: Fahrzeuggruppen
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
@@ -185,13 +185,13 @@ if combined_results is not None and combined_summary is not None:
         current_kw = None
         current_color_index = 0
 
-                # Bold-Format für die KW-Spalte definieren
+        # Bold-Format für die KW-Spalte definieren
         bold_format = workbook.add_format({'bold': True})
 
         # Bold-Format auf die KW-Spalte anwenden
         for row_num, kw in enumerate(vehicle_grouped['KW'], start=1):  # vehicle_grouped statt combined_results
             # Annahme: KW ist in der zweiten Spalte
-            vehicle_sheet.write(row_num + 1, 1, kw, bold_format)  # +1, da die erste Zeile die Kopfzeile ist
+            vehicle_sheet.write(row_num + 1, 1, kw, bold_format)
 
         # Zeilen farblich nach KW formatieren
         for row_num in range(len(vehicle_grouped)):
@@ -205,11 +205,17 @@ if combined_results is not None and combined_summary is not None:
             for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
                 vehicle_sheet.write(row_num + 1, col_num, value, row_format)
 
-        st.download_button(
+    # Buffer zurücksetzen
+    output.seek(0)
+
+    # Debug: Datei lokal speichern
+    with open("debug.xlsx", "wb") as f:
+        f.write(output.getvalue())
+
+    # Download-Button für die Excel-Datei
+    st.download_button(
         label="Kombinierte Ergebnisse als Excel herunterladen",
         data=output.getvalue(),
         file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
-
