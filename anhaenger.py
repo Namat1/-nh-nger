@@ -12,9 +12,15 @@ uploaded_files = st.file_uploader("Lade deine Excel- oder CSV-Dateien hoch", typ
 if uploaded_files:
     all_results = []  # Liste, um Ergebnisse zu speichern
     all_summaries = []  # Liste, um Zusammenfassungen zu speichern
+    
+    progress_bar = st.progress(0)  # Fortschrittsbalken hinzufügen
+    total_files = len(uploaded_files)
 
-    for uploaded_file in uploaded_files:
+    for idx, uploaded_file in enumerate(uploaded_files):
         try:
+            # Fortschrittsanzeige aktualisieren
+            progress_bar.progress((idx + 1) / total_files)
+
             # Dateiname extrahieren
             file_name = uploaded_file.name
             st.write(f"Verarbeite Datei: {file_name}")
@@ -80,7 +86,7 @@ if uploaded_files:
                 # Verdienst berechnen
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
 
-                # Zeilen mit 0 oder NaN in "Verdienst" entfernen (Numerischer Vergleich)
+                # Zeilen mit 0 oder NaN in "Verdienst" entfernen
                 final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
 
                 # Euro-Zeichen in den Suchergebnissen hinzufügen
@@ -92,14 +98,14 @@ if uploaded_files:
                 # Ergebnisse sammeln
                 all_results.append(final_results)
 
-                # Zusammenfassung erstellen (numerisch summieren)
+                # Zusammenfassung erstellen
                 summary = final_results.copy()
-                summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)  # Entferne Euro-Zeichen
+                summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)
                 summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
 
-                # Euro-Zeichen hinzufügen in der Zusammenfassung und Spalte umbenennen
+                # Euro-Zeichen hinzufügen in der Zusammenfassung
                 summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x} €")
-                summary = summary.drop(columns=['Verdienst'])  # Spalte 'Verdienst' entfernen
+                summary = summary.drop(columns=['Verdienst'])
 
                 # Zusammenfassung in die Sammlung einfügen
                 all_summaries.append(summary)
@@ -113,67 +119,26 @@ if uploaded_files:
     # Gesamtergebnisse zusammenführen
     if all_results:
         combined_results = pd.concat(all_results, ignore_index=True)
-
-        # Entfernen unerwünschter Spalten
-        columns_to_drop = [col for col in ['Datei', 'Art'] if col in combined_results.columns]
-        final_output_results = combined_results.drop(columns=columns_to_drop)
-
         combined_summary = pd.concat(all_summaries, ignore_index=True)
 
-        # Gesamte Zusammenfassung anzeigen
         st.write("Kombinierte Suchergebnisse:")
-        st.dataframe(final_output_results)
+        st.dataframe(combined_results)
         st.write("Zusammenfassung nach KW:")
         st.dataframe(combined_summary)
 
         # Ergebnisse in eine Excel-Datei exportieren
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            # Suchergebnisse
-            worksheet = writer.book.add_worksheet("Suchergebnisse")
-            final_output_results.to_excel(writer, index=False, sheet_name="Suchergebnisse", startrow=2)
+            combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
+            combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung")
 
-            # Auto-Spaltenbreite für Suchergebnisse
-            for col_idx, column_name in enumerate(final_output_results.columns):
-                max_content_width = max(final_output_results[column_name].astype(str).map(len).max(), len(column_name))
-                worksheet.set_column(col_idx, col_idx, max_content_width + 2)
-
-            # Zusammenfassung nach KW
-            summary_worksheet = writer.book.add_worksheet("Zusammenfassung")
-            combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung", startrow=1)
-
-            # Formatierungen hinzufügen
-            header_format = writer.book.add_format({'bold': True, 'bg_color': '#D7E4BC', 'border': 1})
-            blue_format = writer.book.add_format({'bg_color': '#E3F2FD', 'border': 1})
-            green_format = writer.book.add_format({'bg_color': '#E8F5E9', 'border': 1})
-
-            # Formatierung der Kopfzeile
-            for col_idx, column_name in enumerate(combined_summary.columns):
-                summary_worksheet.write(0, col_idx, column_name, header_format)
-
-            # Zeilen formatieren mit Trennung nach KW
-            current_kw = None
-            current_format = green_format
-            for row_idx in range(len(combined_summary)):
-                kw = combined_summary.iloc[row_idx, 0]  # KW-Wert
-                if kw != current_kw:
-                    current_kw = kw
-                    # Abwechselndes Farbschema pro KW
-                    current_format = green_format if current_format == blue_format else blue_format
-
-                # Zellen formatieren
-                for col_idx in range(len(combined_summary.columns)):
-                    summary_worksheet.write(row_idx + 1, col_idx, combined_summary.iloc[row_idx, col_idx], current_format)
-
-            # Auto-Spaltenbreite für Zusammenfassung
-            for col_idx, column_name in enumerate(combined_summary.columns):
-                max_content_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name))
-                summary_worksheet.set_column(col_idx, col_idx, max_content_width + 2)
-
-        # Download-Button
         st.download_button(
             label="Kombinierte Ergebnisse als Excel herunterladen",
             data=output.getvalue(),
             file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+    
+    # Fortschrittsanzeige schließen und "FERTIG" anzeigen
+    progress_bar.empty()  # Fortschrittsbalken entfernen
+    st.success("FERTIG! Alle Dateien wurden verarbeitet.")
