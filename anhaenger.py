@@ -203,7 +203,7 @@ if combined_results is not None and combined_summary is not None:
         # Blatt 2: Zusammenfassung
         combined_summary.to_excel(writer, index=False, sheet_name="Zusammenfassung")
 
-        # Blatt 3: Fahrzeuggruppen (neuer Code)
+         Blatt 3: Fahrzeuggruppen (neuer Code)
     combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
         lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                   "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
