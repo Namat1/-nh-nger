@@ -128,7 +128,7 @@ if combined_results is not None and combined_summary is not None:
                 current_color_index = (current_color_index + 1) % len(kw_colors)
             row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
             for col_num, value in enumerate(combined_results.iloc[row_num]):
-                worksheet.write(row_num + 1, col_num, value, row_format)
+                worksheet.write(row_num + 1, col_num, str(value), row_format)
 
         # Blatt 2: Auszahlung pro KW
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
@@ -144,7 +144,7 @@ if combined_results is not None and combined_summary is not None:
                 current_color_index = (current_color_index + 1) % len(kw_colors)
             row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
             for col_num, value in enumerate(combined_summary.iloc[row_num]):
-                summary_sheet.write(row_num + 1, col_num, value, row_format)
+                summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
         # Blatt 3: Auflistung Fahrzeuge
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
@@ -173,7 +173,7 @@ if combined_results is not None and combined_summary is not None:
                 current_color_index = (current_color_index + 1) % len(kw_colors)
             row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
             for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
-                vehicle_sheet.write(row_num + 1, col_num, value, row_format)
+                vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
 
     # Download-Button
     output.seek(0)
