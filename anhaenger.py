@@ -77,7 +77,12 @@ if uploaded_files:
                     art_2 = row['Art 2'].strip().upper()
                     return payment_mapping.get(kennzeichen, 0) if art_2 == "AZ" else 0
 
+                # Verdienst berechnen
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
+
+                # Euro-Zeichen hinzufügen
+                final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
+
                 final_results['KW'] = kalenderwoche  # KW zur Ergebnis-Tabelle hinzufügen
 
                 # Zeilen mit 0 oder NaN in "Verdienst" entfernen
