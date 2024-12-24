@@ -115,24 +115,25 @@ if combined_results is not None and combined_summary is not None:
         current_color_index = 0
 
         # Blatt 1: Suchergebnisse
-        # NaN-Werte in "Suchergebnisse" entfernen (ersetzen mit leeren Strings)
-        cleaned_results = combined_results.fillna("")
+# NaN-Werte in "Suchergebnisse" entfernen (ersetzen mit leeren Strings)
+cleaned_results = combined_results.fillna("")
 
-        # In das Excel-Blatt schreiben
-        cleaned_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
-        worksheet = writer.sheets['Suchergebnisse']
-        for col_num, column_name in enumerate(combined_results.columns):
-            max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
-            worksheet.set_column(col_num, col_num, max_width + 2)
+# In das Excel-Blatt schreiben
+cleaned_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
+worksheet = writer.sheets['Suchergebnisse']
+for col_num, column_name in enumerate(cleaned_results.columns):
+    max_width = max(cleaned_results[column_name].astype(str).map(len).max(), len(column_name), 10)
+    worksheet.set_column(col_num, col_num, max_width + 2)
 
-        for row_num in range(len(combined_results)):
-            kw = combined_results.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_color_index = (current_color_index + 1) % len(kw_colors)
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-            for col_num, value in enumerate(combined_results.iloc[row_num]):
-                worksheet.write(row_num + 1, col_num, str(value), row_format)
+for row_num in range(len(cleaned_results)):
+    kw = cleaned_results.iloc[row_num]['KW']
+    if kw != current_kw:
+        current_kw = kw
+        current_color_index = (current_color_index + 1) % len(kw_colors)
+    row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+    for col_num, value in enumerate(cleaned_results.iloc[row_num]):
+        worksheet.write(row_num + 1, col_num, str(value), row_format)
+
 
         # Blatt 2: Auszahlung pro KW
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
