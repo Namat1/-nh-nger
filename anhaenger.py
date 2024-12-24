@@ -111,15 +111,16 @@ if combined_results is not None and combined_summary is not None:
         current_color_index = 0
 
         # Blatt 1: Suchergebnisse
-        worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-        summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-        vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
         worksheet = writer.sheets['Suchergebnisse']
         for col_num, column_name in enumerate(combined_results.columns):
             max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
             worksheet.set_column(col_num, col_num, max_width + 2)
+
+        worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+
 
         # Farben anwenden
         for row_num in range(len(combined_results)):
@@ -132,9 +133,6 @@ if combined_results is not None and combined_summary is not None:
                 worksheet.write(row_num + 1, col_num, str(value), row_format)
 
        # Blatt 2: Auszahlung pro KW
-        worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-        summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-        vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
 
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         summary_sheet = writer.sheets['Auszahlung pro KW']
@@ -150,12 +148,13 @@ if combined_results is not None and combined_summary is not None:
             row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
             for col_num, value in enumerate(combined_summary.iloc[row_num]):
                 summary_sheet.write(row_num + 1, col_num, str(value), row_format)
-
-        # Blatt 3: Auflistung Fahrzeuge
+                
         worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
         summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
         vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        
 
+        # Blatt 3: Auflistung Fahrzeuge
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
@@ -191,6 +190,11 @@ if combined_results is not None and combined_summary is not None:
             row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
             for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
                 vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
+
+       worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+       summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+       vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+
 
     output.seek(0)
     st.download_button(
