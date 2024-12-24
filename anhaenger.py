@@ -191,9 +191,9 @@ if combined_results is not None and combined_summary is not None:
             for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
                 vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
 
-       worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-       summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-       vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
 
 
     output.seek(0)
