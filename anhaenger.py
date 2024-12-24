@@ -134,12 +134,16 @@ if combined_results is not None and combined_summary is not None:
             fill_value=0
         ).reset_index()
 
+        # Sicherstellen, dass alle relevanten Spalten numerisch sind
+        for col in vehicle_grouped.columns[4:]:
+            vehicle_grouped[col] = pd.to_numeric(vehicle_grouped[col], errors='coerce').fillna(0)
+
         # Formatierung aller Geldspalten
-        money_columns = vehicle_grouped.columns[4:]  # Alle Spalten ab der 5. Spalte
-        for col in money_columns:
+        for col in vehicle_grouped.columns[4:]:
             vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
 
-        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1).apply(lambda x: f"{x:.2f} €")
+        # Gesamtsumme berechnen und formatieren
+        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].applymap(lambda x: float(str(x).replace(' €', '').replace(',', '.'))).sum(axis=1).apply(lambda x: f"{x:.2f} €")
 
         # KW numerisch sortieren
         vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
