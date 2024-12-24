@@ -152,14 +152,20 @@ if combined_results is not None and combined_summary is not None:
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
         )
         vehicle_grouped = combined_results.pivot_table(
-            index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
-            columns='Kennzeichen',
-            values='Verdienst',
-            aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
-            fill_value=0
-        ).reset_index()
+    index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
+    columns='Kennzeichen',
+    values='Verdienst',
+    aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
+    fill_value=0
+).reset_index()
 
-        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1).apply(lambda x: f"{x:.2f} €")
+# Formatierung aller Geldspalten (inklusive Gesamtsumme)
+money_columns = vehicle_grouped.columns[4:]  # Alle Spalten ab der 5. Spalte (Verdienstwerte)
+for col in money_columns:
+    vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
+
+vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1).apply(lambda x: f"{x:.2f} €")
+
 
 
         # KW numerisch sortieren
