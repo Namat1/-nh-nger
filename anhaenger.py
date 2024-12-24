@@ -111,6 +111,10 @@ if combined_results is not None and combined_summary is not None:
         current_color_index = 0
 
         # Blatt 1: Suchergebnisse
+        worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
         worksheet = writer.sheets['Suchergebnisse']
         for col_num, column_name in enumerate(combined_results.columns):
@@ -128,6 +132,10 @@ if combined_results is not None and combined_summary is not None:
                 worksheet.write(row_num + 1, col_num, str(value), row_format)
 
        # Blatt 2: Auszahlung pro KW
+        worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         summary_sheet = writer.sheets['Auszahlung pro KW']
         for col_num, column_name in enumerate(combined_summary.columns):
@@ -144,6 +152,10 @@ if combined_results is not None and combined_summary is not None:
                 summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
         # Blatt 3: Auflistung Fahrzeuge
+        worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
