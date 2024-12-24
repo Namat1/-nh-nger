@@ -127,12 +127,21 @@ if combined_results is not None and combined_summary is not None:
             for col_num, value in enumerate(combined_results.iloc[row_num]):
                 worksheet.write(row_num + 1, col_num, str(value), row_format)
 
-        # Blatt 2: Auszahlung pro KW
+       # Blatt 2: Auszahlung pro KW
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         summary_sheet = writer.sheets['Auszahlung pro KW']
         for col_num, column_name in enumerate(combined_summary.columns):
             max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
             summary_sheet.set_column(col_num, col_num, max_width + 2)
+
+        for row_num in range(len(combined_summary)):
+            kw = combined_summary.iloc[row_num]['KW']
+            if kw != current_kw:
+                current_kw = kw
+                current_color_index = (current_color_index + 1) % len(kw_colors)
+            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+            for col_num, value in enumerate(combined_summary.iloc[row_num]):
+                summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
         # Blatt 3: Auflistung Fahrzeuge
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
@@ -151,11 +160,25 @@ if combined_results is not None and combined_summary is not None:
         for col in vehicle_grouped.columns[4:]:
             vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
 
-        vehicle_grouped.to_excel(writer, index=False, sheet_name="Auflistung Fahrzeuge")
+        # KW numerisch sortieren
+        vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
+        vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+
+        # Excel-Formatierung und Schreiben
+        vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
         vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
         for col_num, column_name in enumerate(vehicle_grouped.columns):
             max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
             vehicle_sheet.set_column(col_num, col_num, max_width + 2)
+
+        for row_num in range(len(vehicle_grouped)):
+            kw = vehicle_grouped.iloc[row_num]['KW']
+            if kw != current_kw:
+                current_kw = kw
+                current_color_index = (current_color_index + 1) % len(kw_colors)
+            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+            for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
+                vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
 
     output.seek(0)
     st.download_button(
