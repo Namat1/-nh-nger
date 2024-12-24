@@ -74,7 +74,7 @@ if uploaded_files:
 
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
                 final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
-                final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
+                final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x:.2f} €")
                 final_results['KW'] = kalenderwoche
                 all_results.append(final_results)
 
@@ -134,16 +134,18 @@ if combined_results is not None and combined_summary is not None:
             fill_value=0
         ).reset_index()
 
-        # Sicherstellen, dass alle relevanten Spalten numerisch sind
+        # Sicherstellen, dass alle Spalten numerisch sind
         for col in vehicle_grouped.columns[4:]:
             vehicle_grouped[col] = pd.to_numeric(vehicle_grouped[col], errors='coerce').fillna(0)
 
-        # Formatierung aller Geldspalten
+        # Formatieren aller Geldspalten
         for col in vehicle_grouped.columns[4:]:
             vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
 
         # Gesamtsumme berechnen und formatieren
-        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].applymap(lambda x: float(str(x).replace(' €', '').replace(',', '.'))).sum(axis=1).apply(lambda x: f"{x:.2f} €")
+        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].applymap(
+            lambda x: float(str(x).replace(' €', '').replace(',', '.'))
+        ).sum(axis=1).apply(lambda x: f"{x:.2f} €")
 
         # KW numerisch sortieren
         vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
@@ -163,3 +165,4 @@ if combined_results is not None and combined_summary is not None:
         file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
