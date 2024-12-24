@@ -82,7 +82,7 @@ if uploaded_files:
                 summary = final_results.copy()
                 summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)
                 summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
-                summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x} €")
+                summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
                 summary = summary.drop(columns=['Verdienst'])
                 all_summaries.append(summary)
         except Exception as e:
@@ -121,52 +121,25 @@ if combined_results is not None and combined_summary is not None:
             max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
             worksheet.set_column(col_num, col_num, max_width + 2)
 
-        for row_num in range(len(combined_results)):
-            kw = combined_results.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_color_index = (current_color_index + 1) % len(kw_colors)
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-            for col_num, value in enumerate(combined_results.iloc[row_num]):
-                worksheet.write(row_num + 1, col_num, str(value), row_format)
-
-        # Blatt 2: Auszahlung pro KW
-        combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
-        summary_sheet = writer.sheets['Auszahlung pro KW']
-        for col_num, column_name in enumerate(combined_summary.columns):
-            max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
-            summary_sheet.set_column(col_num, col_num, max_width + 2)
-
-        for row_num in range(len(combined_summary)):
-            kw = combined_summary.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_color_index = (current_color_index + 1) % len(kw_colors)
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-            for col_num, value in enumerate(combined_summary.iloc[row_num]):
-                summary_sheet.write(row_num + 1, col_num, str(value), row_format)
-
         # Blatt 3: Auflistung Fahrzeuge (KW numerisch sortieren)
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
         )
         vehicle_grouped = combined_results.pivot_table(
-    index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
-    columns='Kennzeichen',
-    values='Verdienst',
-    aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
-    fill_value=0
-).reset_index()
+            index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
+            columns='Kennzeichen',
+            values='Verdienst',
+            aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
+            fill_value=0
+        ).reset_index()
 
-# Formatierung aller Geldspalten (inklusive Gesamtsumme)
-money_columns = vehicle_grouped.columns[4:]  # Alle Spalten ab der 5. Spalte (Verdienstwerte)
-for col in money_columns:
-    vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
+        # Formatierung aller Geldspalten
+        money_columns = vehicle_grouped.columns[4:]  # Alle Spalten ab der 5. Spalte
+        for col in money_columns:
+            vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
 
-vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1).apply(lambda x: f"{x:.2f} €")
-
-
+        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1).apply(lambda x: f"{x:.2f} €")
 
         # KW numerisch sortieren
         vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
@@ -179,16 +152,6 @@ vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1).a
             max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
             vehicle_sheet.set_column(col_num, col_num, max_width + 2)
 
-        for row_num in range(len(vehicle_grouped)):
-            kw = vehicle_grouped.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_color_index = (current_color_index + 1) % len(kw_colors)
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-            for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
-                vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
-
-    # Download-Button
     output.seek(0)
     st.download_button(
         label="Kombinierte Ergebnisse als Excel herunterladen",
