@@ -159,7 +159,8 @@ if combined_results is not None and combined_summary is not None:
             fill_value=0
         ).reset_index()
 
-        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
+        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1).apply(lambda x: f"{x:.2f} €")
+
 
         # KW numerisch sortieren
         vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
