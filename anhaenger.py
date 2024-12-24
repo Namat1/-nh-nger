@@ -115,7 +115,11 @@ if combined_results is not None and combined_summary is not None:
         current_color_index = 0
 
         # Blatt 1: Suchergebnisse
-        combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
+        # NaN-Werte in "Suchergebnisse" entfernen (ersetzen mit leeren Strings)
+        cleaned_results = combined_results.fillna("")
+
+        # In das Excel-Blatt schreiben
+        cleaned_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
         worksheet = writer.sheets['Suchergebnisse']
         for col_num, column_name in enumerate(combined_results.columns):
             max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
