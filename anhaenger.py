@@ -14,98 +14,126 @@ combined_results = None
 combined_summary = None
 
 # Beispiel-Zuordnung von Nachname zu Personalnummern
-personalnummer_mapping = {
-    "Adler, Philipp": "00041450",
-    "Auer, Frank": "00020795",
-    "Batkowski, Tilo": "00046601",
-    "Benabbes, Badr": "00048980",
-    "Biebow, Thomas": "00042004",
-    "Bläsing, Elmar": "00049093",
-    "Böhnke, Marcel": "00020833",
-    "Bursian, Ronny": "00025714",
-    "Buth, Sven": "00046673",
-    "Carstensen, Martin": "00042412",
-    "Chege, Moses Gichuru": "00046106",
-    "Dammasch, Bernd": "00019297",
-    "Demuth, Harry": "00020796",
-    "Doroszkiewicz, Bogum": "00049132",
-    "Dürr, Holger": "00039164",
-    "Effenberger, Sven": "00030807",
-    "Engel, Raymond": "00033429",
-    "Fechner, Danny": "00043696",
-    "Fechner, Klaus": "00038278",
-    "Findeklee, Bernd": "00020804",
-    "Flint, Henryk": "00042414",
-    "Fuhlbrügge, Justin": "00046289",
-    "Gebauer, Ronny": "00038765",
-    "Gheonea, Costel-Dani": "00050877",
-    "Glanz, Björn": "00041914",
-    "Gnech, Torsten": "00018613",
-    "Greve, Nicole": "00040760",
-    "Guthmann, Fred": "00018328",
-    "Hagen, Andy": "00020271",
-    "Hartig, Sebastian": "00044120",
-    "Haus, David": "00046101",
-    "Heeser, Bernd": "00041916",
-    "Helm, Philipp": "00046685",
-    "Henkel, Bastian": "00048187",
-    "Holtz, Torsten": "00021159",
-    "Janikiewicz, Radosla": "00042159",
-    "Kleiber, Lutz": "00026255",
-    "Klemkow, Ralf": "00040634",
-    "Kollmann, Steffen": "00040988",
-    "König, Heiko": "00036341",
-    "Krazewski, Cezary": "00039463",
-    "Krieger, Christian": "00049092",
-    "Krull, Benjamin": "00044192",
-    "Lange, Michael": "00035407",
-    "Lewandowski, Kamil": "00041044",
-    "Likoonski, Vladimir": "00044766",
-    "Linke, Erich": "00048377",
-    "Lefkih, Houssni": "00052293",
-    "Ludolf, Michel": "00048814",
-    "Marouni, Ayyoub": "00048986",
-    "Mintel, Mario": "00046686",
-    "Ohlenroth, Nadja": "00042114",
-    "Ohms, Torsten": "00019300",
-    "Okoth, Tedy Omondi": "00046107",
-    "Oszmian, Jakub": "00039464",
-    "Pabst, Torsten": "00021976",
-    "Pawlak, Bartosz": "00036381",
-    "Pekrul, Olaf": "00021063",
-    "Pham Manh, Chris": "00039465",
-    "Piepke, Torsten": "00021390",
-    "Plinke, Kilian": "00044137",
-    "Pogodski, Enrico": "00046668",
-    "Quint, Stefan": "00035718",
-    "Richter, Clemens-Pel": "00041103",
-    "Rimba, Rimba Gona": "00046108",
-    "Sarwatka, Heiko": "00028747",
-    "Scheil, Eric-Rene": "00038579",
-    "Scheil, Rene": "00020851",
-    "Schlichting, Michael": "00021452",
-    "Schlutt, Hubert": "00020880",
-    "Schlutt, Rene": "00042932",
-    "Schmieder, Steffen": "00046286",
-    "Schneider, Matthias": "00045495",
-    "Schulz, Julian": "00049130",
-    "Schulz, Stephan": "00041558",
-    "Singh, Jagtar": "00040902",
-    "Steckel, Wolfgang": "00046054",
-    "Stoltz, Thorben": "00040991",
-    "Stuntebeck, Detlef": "00020436",
-    "Suse, Gerald": "00038919",
-    "Sütel, Frank Peter": "00020330",
-    "Thal, Jannic": "00046006",
-    "Tumanow, Vassili": "00045019",
-    "Wachnowski, Klaus": "00026019",
-    "Wendel, Danilo": "00048994",
-    "Wille, Rene": "00021393",
-    "Wisniewski, Krzyszto": "00046550",
-    "Zander, Jan": "00042454",
-    "Zhelavskyi, Serhii": "00050878",
-    "Zosel, Ingo": "00026303"
+import streamlit as st
+import pandas as pd
+from io import BytesIO
+import re
+
+# Titel der App
+st.title("Zulage Sonderfahrzeuge")
+
+# Mehrere Dateien hochladen
+uploaded_files = st.file_uploader("Lade deine Excel- oder CSV-Dateien hoch", type=["xlsx", "xls", "csv"], accept_multiple_files=True)
+
+# Variablen zur Zwischenspeicherung
+combined_results = None
+combined_summary = None
+
+# Vollständiges Mapping von Nachnamen zu Personalnummern
+name_to_personalnummer = {
+    "Adler": {"Philipp": "00041450"},
+    "Auer": {"Frank": "00020795"},
+    "Batkowski": {"Tilo": "00046601"},
+    "Benabbes": {"Badr": "00048980"},
+    "Biebow": {"Thomas": "00042004"},
+    "Bläsing": {"Elmar": "00049093"},
+    "Bursian": {"Ronny": "00025714"},
+    "Buth": {"Sven": "00046673"},
+    "Carstensen": {"Martin": "00042412"},
+    "Chege": {"Moses Gichuru": "00046106"},
+    "Dammasch": {"Bernd": "00019297"},
+    "Demuth": {"Harry": "00020796"},
+    "Doroszkiewicz": {"Bogum": "00049132"},
+    "Dürr": {"Holger": "00039164"},
+    "Effenberger": {"Sven": "00030807"},
+    "Engel": {"Raymond": "00033429"},
+    "Fechner": {"Danny": "00043696", "Klaus": "00038278"},
+    "Findeklee": {"Bernd": "00020804"},
+    "Flint": {"Henryk": "00042414"},
+    "Fuhlbrügge": {"Justin": "00046289"},
+    "Gheonea": {"Costel-Dani": "00050877"},
+    "Glanz": {"Björn": "00041914"},
+    "Gnech": {"Torsten": "00018613"},
+    "Greve": {"Nicole": "00040760"},
+    "Guthmann": {"Fred": "00018328"},
+    "Hagen": {"Andy": "00020271"},
+    "Hartig": {"Sebastian": "00044120"},
+    "Haus": {"David": "00046101"},
+    "Heeser": {"Bernd": "00041916"},
+    "Helm": {"Philipp": "00046685"},
+    "Henkel": {"Bastian": "00048187"},
+    "Holtz": {"Torsten": "00021159"},
+    "Janikiewicz": {"Radosla": "00042159"},
+    "Kleiber": {"Lutz": "00026255"},
+    "Klemkow": {"Ralf": "00040634"},
+    "Kollmann": {"Steffen": "00040988"},
+    "König": {"Heiko": "00036341"},
+    "Krazewski": {"Cezary": "00039463"},
+    "Krieger": {"Christian": "00049092"},
+    "Krull": {"Benjamin": "00044192"},
+    "Lange": {"Michael": "00035407"},
+    "Lewandowski": {"Kamil": "00041044"},
+    "Likoonski": {"Vladimir": "00044766"},
+    "Linke": {"Erich": "00048377"},
+    "Lefkih": {"Houssni": "00052293"},
+    "Ludolf": {"Michel": "00048814"},
+    "Marouni": {"Ayyoub": "00048986"},
+    "Mintel": {"Mario": "00046686"},
+    "Ohlenroth": {"Nadja": "00042114"},
+    "Ohms": {"Torsten": "00019300"},
+    "Okoth": {"Tedy Omondi": "00046107"},
+    "Oszmian": {"Jakub": "00039464"},
+    "Pabst": {"Torsten": "00021976"},
+    "Pawlak": {"Bartosz": "00036381"},
+    "Piepke": {"Torsten": "00021390"},
+    "Plinke": {"Kilian": "00044137"},
+    "Pogodski": {"Enrico": "00046668"},
+    "Quint": {"Stefan": "00035718"},
+    "Rimba": {"Rimba Gona": "00046108"},
+    "Sarwatka": {"Heiko": "00028747"},
+    "Scheil": {"Eric-Rene": "00038579", "Rene": "00020851"},
+    "Schlichting": {"Michael": "00021452"},
+    "Schlutt": {"Hubert": "00020880", "Rene": "00042932"},
+    "Schmieder": {"Steffen": "00046286"},
+    "Schneider": {"Matthias": "00045495"},
+    "Schulz": {"Julian": "00049130", "Stephan": "00041558"},
+    "Singh": {"Jagtar": "00040902"},
+    "Stoltz": {"Thorben": "00040991"},
+    "Thal": {"Jannic": "00046006"},
+    "Wachnowski": {"Klaus": "00026019"},
+    "Wendel": {"Danilo": "00048994"},
+    "Wille": {"Rene": "00021393"},
+    "Wisniewski": {"Krzyszto": "00046550"},
+    "Zander": {"Jan": "00042454"},
+    "Zosel": {"Ingo": "00026303"},
 }
+
+if uploaded_files:
+    # Der Hauptteil bleibt hier unverändert...
+
+    if combined_results is not None and combined_summary is not None:
+    # Personalnummer basierend auf Vor- und Nachnamen ergänzen
+    combined_summary['Personalnummer'] = combined_summary.apply(
+        lambda row: name_to_personalnummer.get(
+            (row['Nachname'], row['Vorname']), "Unbekannt"
+        ), 
+        axis=1
+    )
+
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            # Ausgabe wie vorher, mit neuer Spalte für "Personalnummer"
+            combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
+            # Formatierung und weitere Tabellen bleiben gleich...
+
+        output.seek(0)
+        st.download_button(
+            label="Kombinierte Ergebnisse als Excel herunterladen",
+            data=output.getvalue(),
+            file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
 
 
 
