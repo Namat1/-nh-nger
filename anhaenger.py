@@ -181,26 +181,43 @@ if uploaded_files:
         combined_results = pd.concat(all_results, ignore_index=True).fillna("")
         combined_summary = pd.concat(all_summaries, ignore_index=True).fillna("")
 
-        # Personalnummer basierend auf Nachnamen hinzufügen
-        combined_summary['Personalnummer'] = combined_summary['Nachname'].map(name_to_personalnummer).fillna("Unbekannt")
+        # Sortieren der Daten
+        combined_results['KW_Numeric'] = combined_results['KW'].str.extract(r'(\d+)').astype(float).fillna(-1).astype(int)
+        combined_results = combined_results[combined_results['KW_Numeric'] != -1].sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
-        # Excel-Datei generieren
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            workbook = writer.book
-            kw_colors = ['#FFEB9C', '#D9EAD3', '#F4CCCC', '#CFE2F3', '#FFD966']
-            current_kw = None
-            current_color_index = 0
+        combined_summary['KW_Numeric'] = combined_summary['KW'].str.extract(r'(\d+)').astype(float).fillna(-1).astype(int)
+        combined_summary = combined_summary[combined_summary['KW_Numeric'] != -1].sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
-            # Blatt 1: Suchergebnisse
-            combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
-            worksheet = writer.sheets['Suchergebnisse']
-            worksheet.freeze_panes(1, 0)
-            for col_num, column_name in enumerate(combined_results.columns):
-                max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
-                worksheet.set_column(col_num, col_num, max_width + 2)
+    progress_bar.empty()
+    st.success("FERTIG! Alle Dateien wurden verarbeitet.")
 
-            # Blatt 2: Auszahlung pro KW
+if combined_results is not None and combined_summary is not None:
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        workbook = writer.book
+        kw_colors = ['#FFEB9C', '#D9EAD3', '#F4CCCC', '#CFE2F3', '#FFD966']
+        current_kw = None
+        current_color_index = 0
+
+        # Blatt 1: Suchergebnisse
+        combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
+        worksheet = writer.sheets['Suchergebnisse']
+        worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        for col_num, column_name in enumerate(combined_results.columns):
+            max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
+            worksheet.set_column(col_num, col_num, max_width + 2)
+
+        # Farben anwenden
+        for row_num in range(len(combined_results)):
+            kw = combined_results.iloc[row_num]['KW']
+            if kw != current_kw:
+                current_kw = kw
+                current_color_index = (current_color_index + 1) % len(kw_colors)
+            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+            for col_num, value in enumerate(combined_results.iloc[row_num]):
+                worksheet.write(row_num + 1, col_num, str(value), row_format)
+
+        # Blatt 2: Auszahlung pro KW
             combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
             summary_sheet = writer.sheets['Auszahlung pro KW']
             summary_sheet.freeze_panes(1, 0)
@@ -217,10 +234,47 @@ if uploaded_files:
                 for col_num, value in enumerate(combined_summary.iloc[row_num]):
                     summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
-        output.seek(0)
-        st.download_button(
-            label="Kombinierte Ergebnisse als Excel herunterladen",
-            data=output.getvalue(),
-            file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+        # Blatt 3: Auflistung Fahrzeuge
+        combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
+            lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
+                      "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
         )
+        vehicle_grouped = combined_results.pivot_table(
+            index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
+            columns='Kennzeichen',
+            values='Verdienst',
+            aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
+            fill_value=0
+        ).reset_index()
+
+        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
+        for col in vehicle_grouped.columns[4:]:
+            vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
+
+        vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
+        vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+
+        vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
+        vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
+        vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        for col_num, column_name in enumerate(vehicle_grouped.columns):
+            max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
+            vehicle_sheet.set_column(col_num, col_num, max_width + 2)
+
+        for row_num in range(len(vehicle_grouped)):
+            kw = vehicle_grouped.iloc[row_num]['KW']
+            if kw != current_kw:
+                current_kw = kw
+                current_color_index = (current_color_index + 1) % len(kw_colors)
+            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+            for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
+                vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
+
+    output.seek(0)
+    st.download_button(
+        label="Kombinierte Ergebnisse als Excel herunterladen",
+        data=output.getvalue(),
+        file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
