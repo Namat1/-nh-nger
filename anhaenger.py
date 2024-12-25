@@ -182,13 +182,14 @@ if uploaded_files:
     progress_bar.empty()
     st.success("FERTIG! Alle Dateien wurden verarbeitet.")
 
-    if combined_results is not None and combined_summary is not None:
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            workbook = writer.book
-
-    # Farben definieren
-    kw_colors = ["#FFEBEE", "#E3F2FD", "#E8F5E9", "#FFF3E0"]  # Farbcodes für Kalenderwochen
+if combined_results is not None and combined_summary is not None:
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        workbook = writer.book
+        kw_colors = ['#FFEB9C', '#D9EAD3', '#F4CCCC', '#CFE2F3', '#FFD966']
+        current_kw = None
+        current_color_index = 0
+hen
 
     # Blatt 1: Suchergebnisse
     if not combined_results.empty:
