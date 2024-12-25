@@ -182,7 +182,7 @@ if uploaded_files:
     progress_bar.empty()
     st.success("FERTIG! Alle Dateien wurden verarbeitet.")
 
-if combined_results is not None and combined_summary is not None:
+    if combined_results is not None and combined_summary is not None:
         combined_summary['Personalnummer'] = combined_summary.apply(lambda row: name_to_personalnummer.get(row['Nachname'], {}).get(row['Vorname'], "Unbekannt"), axis=1)
 
         output = BytesIO()
