@@ -189,7 +189,7 @@ if combined_results is not None and combined_summary is not None:
         kw_colors = ['#FFEB9C', '#D9EAD3', '#F4CCCC', '#CFE2F3', '#FFD966']
         current_kw = None
         current_color_index = 0
-hen
+
 
     # Blatt 1: Suchergebnisse
     if not combined_results.empty:
