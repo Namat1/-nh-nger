@@ -26,7 +26,7 @@ name_to_personalnummer = {
     "Chege": {"Moses Gichuru": "00046106"},
     "Dammasch": {"Bernd": "00019297"},
     "Demuth": {"Harry": "00020796"},
-    "Doroszkiewicz": {"Bogum": "00049132"},
+    "Doroszkiewicz": {"Bogumil": "00049132"},
     "Dürr": {"Holger": "00039164"},
     "Effenberger": {"Sven": "00030807"},
     "Engel": {"Raymond": "00033429"},
@@ -34,7 +34,7 @@ name_to_personalnummer = {
     "Findeklee": {"Bernd": "00020804"},
     "Flint": {"Henryk": "00042414"},
     "Fuhlbrügge": {"Justin": "00046289"},
-    "Gheonea": {"Costel-Dani": "00050877"},
+    "Gheonea": {"Costel-Daniel": "00050877"},
     "Glanz": {"Björn": "00041914"},
     "Gnech": {"Torsten": "00018613"},
     "Greve": {"Nicole": "00040760"},
@@ -46,7 +46,7 @@ name_to_personalnummer = {
     "Helm": {"Philipp": "00046685"},
     "Henkel": {"Bastian": "00048187"},
     "Holtz": {"Torsten": "00021159"},
-    "Janikiewicz": {"Radosla": "00042159"},
+    "Janikiewicz": {"Radoslaw": "00042159"},
     "Kleiber": {"Lutz": "00026255"},
     "Klemkow": {"Ralf": "00040634"},
     "Kollmann": {"Steffen": "00040988"},
@@ -86,7 +86,7 @@ name_to_personalnummer = {
     "Wachnowski": {"Klaus": "00026019"},
     "Wendel": {"Danilo": "00048994"},
     "Wille": {"Rene": "00021393"},
-    "Wisniewski": {"Krzyszto": "00046550"},
+    "Wisniewski": {"Krzysztof": "00046550"},
     "Zander": {"Jan": "00042454"},
     "Zosel": {"Ingo": "00026303"},
 }
@@ -218,7 +218,13 @@ if combined_results is not None and combined_summary is not None:
                 worksheet.write(row_num + 1, col_num, str(value), row_format)
 
         # Blatt 2: Auszahlung pro KW
-        combined_summary['name_to_personalnummer'] = combined_summary['Nachname'].map(personalnummer_mapping)
+        combined_summary['Personalnummer'] = combined_summary.apply(
+    lambda row: name_to_personalnummer.get(
+        row['Nachname'], {}
+    ).get(row['Vorname'], "Unbekannt"),
+    axis=1
+)
+
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         summary_sheet = writer.sheets['Auszahlung pro KW']
         summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
