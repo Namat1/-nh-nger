@@ -295,7 +295,7 @@ if combined_results is not None and not combined_results.empty:
 
 
 
-output.seek(0)
+    output.seek(0)
     st.download_button(
         label="Kombinierte Ergebnisse als Excel herunterladen",
         data=output.getvalue(),
