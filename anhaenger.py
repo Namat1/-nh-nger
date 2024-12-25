@@ -194,7 +194,6 @@ if combined_results is not None and combined_summary is not None:
     # Blatt 1: Suchergebnisse
     if not combined_results.empty:
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
-        combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
         worksheet = writer.sheets['Suchergebnisse']
         worksheet.freeze_panes(1, 0)  # Erste Zeile fixieren
 
@@ -217,7 +216,6 @@ if combined_results is not None and combined_summary is not None:
 
     # Blatt 2: Auszahlung pro KW
     if not combined_summary.empty:
-        combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         summary_sheet = writer.sheets['Auszahlung pro KW']
         summary_sheet.freeze_panes(1, 0)  # Erste Zeile fixieren
