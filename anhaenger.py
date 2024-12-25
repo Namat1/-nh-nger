@@ -189,17 +189,23 @@ if uploaded_files:
 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
     workbook = writer.book  # Workbook-Objekt abrufen
 
+    # Farben definieren
+    kw_colors = ["#FFEBEE", "#E3F2FD", "#E8F5E9", "#FFF3E0"]  # Farbcodes für Kalenderwochen
+
     # Blatt 1: Suchergebnisse
     if combined_results is not None:
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
         worksheet = writer.sheets['Suchergebnisse']
         worksheet.freeze_panes(1, 0)
 
+        # Spaltenbreite automatisch anpassen
+        for col_num, column_name in enumerate(combined_results.columns):
+            max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
+            worksheet.set_column(col_num, col_num, max_width + 2)
+
         # Farben anwenden
-        kw_colors = ["#FFEBEE", "#E3F2FD", "#E8F5E9", "#FFF3E0"]  # Farbcodes für Kalenderwochen
         current_kw = None
         current_color_index = -1
-
         for row_num in range(len(combined_results)):
             kw = combined_results.iloc[row_num]['KW']
             if kw != current_kw:
@@ -215,12 +221,13 @@ with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         summary_sheet = writer.sheets['Auszahlung pro KW']
         summary_sheet.freeze_panes(1, 0)
 
+        # Spaltenbreite automatisch anpassen
         for col_num, column_name in enumerate(combined_summary.columns):
             max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
             summary_sheet.set_column(col_num, col_num, max_width + 2)
 
     # Blatt 3: Auflistung Fahrzeuge
-    if "Kategorie" in combined_results.columns:
+    if combined_results is not None and "Kategorie" in combined_results.columns:
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
@@ -243,6 +250,8 @@ with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
         vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
         vehicle_sheet.freeze_panes(1, 0)
+
+        # Spaltenbreite automatisch anpassen
         for col_num, column_name in enumerate(vehicle_grouped.columns):
             max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
             vehicle_sheet.set_column(col_num, col_num, max_width + 2)
