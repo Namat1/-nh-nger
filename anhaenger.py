@@ -187,6 +187,8 @@ if uploaded_files:
 
         output = BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            workbook = writer.book  # Workbook-Objekt abrufen
+            
             
 
         # Blatt 1: Suchergebnisse
