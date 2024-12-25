@@ -218,7 +218,7 @@ if combined_results is not None and combined_summary is not None:
                 worksheet.write(row_num + 1, col_num, str(value), row_format)
 
         # Blatt 2: Auszahlung pro KW
-        combined_summary['Personalnummer'] = combined_summary['Nachname'].map(personalnummer_mapping)
+        combined_summary['name_to_personalnummer'] = combined_summary['Nachname'].map(personalnummer_mapping)
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         summary_sheet = writer.sheets['Auszahlung pro KW']
         summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
