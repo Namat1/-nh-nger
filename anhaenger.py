@@ -138,10 +138,10 @@ if combined_results is not None and combined_summary is not None:
                 worksheet.write(row_num + 1, col_num, str(value), row_format)
 
         # Blatt 2: Auszahlung pro KW
-       combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
-       combined_summary['Personalnummer'] = combined_summary['Nachname'].map(personalnummer_mapping)
-       summary_sheet = writer.sheets['Auszahlung pro KW']
-       summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
+        combined_summary['Personalnummer'] = combined_summary['Nachname'].map(personalnummer_mapping)
+        summary_sheet = writer.sheets['Auszahlung pro KW']
+        summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
         for col_num, column_name in enumerate(combined_summary.columns):
             max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
             summary_sheet.set_column(col_num, col_num, max_width + 2)
