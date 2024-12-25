@@ -4,7 +4,7 @@ from io import BytesIO
 import re
 
 # Titel der App
-st.title("Zulage GGL + Anhänger")
+st.title("Zulage Sonderfahrzeuge")
 
 # Mehrere Dateien hochladen
 uploaded_files = st.file_uploader("Lade deine Excel- oder CSV-Dateien hoch", type=["xlsx", "xls", "csv"], accept_multiple_files=True)
