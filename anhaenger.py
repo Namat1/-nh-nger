@@ -198,6 +198,9 @@ if uploaded_files:
                 worksheet.set_column(col_num, col_num, max_width + 2)
 
         # Farben anwenden
+        current_kw = None  # Initialisiere current_kw
+        current_color_index = -1  # Initialisiere den Farbindikator (optional, falls genutzt)
+
         for row_num in range(len(combined_results)):
             kw = combined_results.iloc[row_num]['KW']
             if kw != current_kw:
@@ -214,6 +217,9 @@ if uploaded_files:
             for col_num, column_name in enumerate(combined_summary.columns):
                 max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
                 summary_sheet.set_column(col_num, col_num, max_width + 2)
+
+        current_kw = None  # Initialisiere current_kw
+        current_color_index = -1  # Initialisiere den Farbindikator (optional, falls genutzt)
 
         for row_num in range(len(combined_summary)):
             kw = combined_summary.iloc[row_num]['KW']
