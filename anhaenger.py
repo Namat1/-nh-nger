@@ -190,12 +190,12 @@ if uploaded_files:
             
 
         # Blatt 1: Suchergebnisse
-        combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
-        worksheet = writer.sheets['Suchergebnisse']
-        worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-        for col_num, column_name in enumerate(combined_results.columns):
-            max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
-            worksheet.set_column(col_num, col_num, max_width + 2)
+            combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
+            worksheet = writer.sheets['Suchergebnisse']
+            worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+            for col_num, column_name in enumerate(combined_results.columns):
+                max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
+                worksheet.set_column(col_num, col_num, max_width + 2)
 
         # Farben anwenden
         for row_num in range(len(combined_results)):
@@ -208,12 +208,12 @@ if uploaded_files:
                 worksheet.write(row_num + 1, col_num, str(value), row_format)
 
         # Blatt 2: Auszahlung pro KW
-        combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
-        summary_sheet = writer.sheets['Auszahlung pro KW']
-        summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-        for col_num, column_name in enumerate(combined_summary.columns):
-            max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
-            summary_sheet.set_column(col_num, col_num, max_width + 2)
+            combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
+            summary_sheet = writer.sheets['Auszahlung pro KW']
+            summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+            for col_num, column_name in enumerate(combined_summary.columns):
+                max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
+                summary_sheet.set_column(col_num, col_num, max_width + 2)
 
         for row_num in range(len(combined_summary)):
             kw = combined_summary.iloc[row_num]['KW']
