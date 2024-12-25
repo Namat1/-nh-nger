@@ -13,23 +13,6 @@ uploaded_files = st.file_uploader("Lade deine Excel- oder CSV-Dateien hoch", typ
 combined_results = None
 combined_summary = None
 
-# Beispiel-Zuordnung von Nachname zu Personalnummern
-import streamlit as st
-import pandas as pd
-from io import BytesIO
-import re
-
-# Titel der App
-st.title("Zulage Sonderfahrzeuge")
-
-# Mehrere Dateien hochladen
-uploaded_files = st.file_uploader("Lade deine Excel- oder CSV-Dateien hoch", type=["xlsx", "xls", "csv"], accept_multiple_files=True)
-
-# Variablen zur Zwischenspeicherung
-combined_results = None
-combined_summary = None
-
-# Vollständiges Mapping von Nachnamen zu Personalnummern
 name_to_personalnummer = {
     "Adler": {"Philipp": "00041450"},
     "Auer": {"Frank": "00020795"},
@@ -108,33 +91,6 @@ name_to_personalnummer = {
     "Zosel": {"Ingo": "00026303"},
 }
 
-if uploaded_files:
-    # Der Hauptteil bleibt hier unverändert...
-
-    if combined_results is not None and combined_summary is not None:
-    # Personalnummer basierend auf Vor- und Nachnamen ergänzen
-    combined_summary['Personalnummer'] = combined_summary.apply(
-        lambda row: name_to_personalnummer.get(
-            (row['Nachname'], row['Vorname']), "Unbekannt"
-        ), 
-        axis=1
-    )
-
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            # Ausgabe wie vorher, mit neuer Spalte für "Personalnummer"
-            combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
-            # Formatierung und weitere Tabellen bleiben gleich...
-
-        output.seek(0)
-        st.download_button(
-            label="Kombinierte Ergebnisse als Excel herunterladen",
-            data=output.getvalue(),
-            file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-
-
 
 
 if uploaded_files:
@@ -208,6 +164,15 @@ if uploaded_files:
                 summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
                 summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
                 summary = summary.drop(columns=['Verdienst'])
+
+                # Personalnummer hinzufügen
+                summary['Personalnummer'] = summary.apply(
+                    lambda row: name_to_personalnummer.get(
+                        (row['Nachname'], row['Vorname']), "Unbekannt"
+                    ),
+                    axis=1
+                )
+
                 all_summaries.append(summary)
         except Exception as e:
             st.error(f"Fehler beim Verarbeiten der Datei {file_name}: {e}")
