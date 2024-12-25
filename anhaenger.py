@@ -198,6 +198,9 @@ if uploaded_files:
                 worksheet.set_column(col_num, col_num, max_width + 2)
 
         # Farben anwenden
+        # Farben definieren
+        kw_colors = ["#FFEBEE", "#E3F2FD", "#E8F5E9", "#FFF3E0"]  # Farbcodes für unterschiedliche Kalenderwochen
+        
         current_kw = None  # Initialisiere current_kw
         current_color_index = -1  # Initialisiere den Farbindikator (optional, falls genutzt)
 
