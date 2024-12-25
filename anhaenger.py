@@ -13,6 +13,95 @@ uploaded_files = st.file_uploader("Lade deine Excel- oder CSV-Dateien hoch", typ
 combined_results = None
 combined_summary = None
 
+# Vollständiges Mapping von Nachnamen zu Personalnummern
+name_to_personalnummer = {
+    "Adler": "00010006",
+    "Zosel": "00010770",
+    "Auer": "00010023",
+    "Batkowski": "00010612",
+    "Benabbes": "00010046",
+    "Biebow": "00010052",
+    "Blaesing": "00010868",
+    "Breier": "00010248",
+    "Bursian": "00010084",
+    "Buth": "00010015",
+    "Chandugu": "00010455",
+    "Chege": "00011037",
+    "Dammasch": "00010127",
+    "Demuth": "00010139",
+    "Dorenz": "00010152",
+    "Doroszkiewicz": "00010697",
+    "Duerr": "00010158",
+    "Effenberger": "00010164",
+    "Engel": "00010171",
+    "Fechner": "00010174",
+    "Fechner_1": "00010175",
+    "Findeklee": "00010179",
+    "Flint": "00010180",
+    "Fuhlbruegge": "00011021",
+    "Gehrmann": "00010537",
+    "Gheonea": "00011016",
+    "Glanz": "00010204",
+    "Gnech": "00010206",
+    "Guthmann": "00010233",
+    "Hagen": "00010236",
+    "Haus": "00010032",
+    "Heeser": "00010246",
+    "Helm": "00010624",
+    "Henkel": "00010286",
+    "Holtz": "00010270",
+    "Janikiewicz": "00010292",
+    "Kelling": "00010319",
+    "Kleiber": "00010327",
+    "Klemkow": "00010328",
+    "Kollmann": "00010344",
+    "Koenig": "00010346",
+    "Krazewski": "00010359",
+    "Krieger": "00010467",
+    "Krull": "00010336",
+    "Lange": "00010971",
+    "Lange_1": "00010379",
+    "Lewandowski": "00010387",
+    "Likoonksi": "00010966",
+    "Ludolf": "00011033",
+    "Marouni": "00010058",
+    "Mintel": "00010943",
+    "Ohlenroth": "00010485",
+    "Ohms": "00010486",
+    "Okoth": "00010476",
+    "Oszmian": "00010494",
+    "Pabst": "00010496",
+    "Pawlak": "00010509",
+    "Piepke": "00010527",
+    "Plinke": "00010536",
+    "Pogodski": "00010860",
+    "Quint": "00010551",
+    "Reugels": "00010631",
+    "Rimba": "00010289",
+    "Sarwatka": "00010596",
+    "Scheil": "00010600",
+    "Scheil_1": "00010599",
+    "Schlachta": "00010958",
+    "Schlichting": "00010605",
+    "Schmieder": "00010858",
+    "Schneider": "00010779",
+    "Schulz": "00010547",
+    "Singh": "00010636",
+    "Stoltz": "00010664",
+    "Suse": "00010669",
+    "Suetel": "00010670",
+    "Tesch": "00010679",
+    "Thal": "00010746",
+    "Tumanow": "00010825",
+    "Udrea": "00010490",
+    "Wachnowski": "00010718",
+    "Waschitschek": "00010721",
+    "Wendel": "00010699",
+    "Wille": "00010736",
+    "Wisniewski": "00010759",
+    "Zander": "00010757"
+}
+
 if uploaded_files:
     all_results = []
     all_summaries = []
@@ -92,75 +181,46 @@ if uploaded_files:
         combined_results = pd.concat(all_results, ignore_index=True).fillna("")
         combined_summary = pd.concat(all_summaries, ignore_index=True).fillna("")
 
-        # Sortieren der Daten
-        combined_results['KW_Numeric'] = combined_results['KW'].str.extract(r'(\d+)').astype(float).fillna(-1).astype(int)
-        combined_results = combined_results[combined_results['KW_Numeric'] != -1].sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+        # Personalnummer basierend auf Nachnamen hinzufügen
+        combined_summary['Personalnummer'] = combined_summary['Nachname'].map(name_to_personalnummer).fillna("Unbekannt")
 
-        combined_summary['KW_Numeric'] = combined_summary['KW'].str.extract(r'(\d+)').astype(float).fillna(-1).astype(int)
-        combined_summary = combined_summary[combined_summary['KW_Numeric'] != -1].sort_values(by=['KW_Numeric', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+        # Excel-Datei generieren
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            workbook = writer.book
+            kw_colors = ['#FFEB9C', '#D9EAD3', '#F4CCCC', '#CFE2F3', '#FFD966']
+            current_kw = None
+            current_color_index = 0
 
-    progress_bar.empty()
-    st.success("FERTIG! Alle Dateien wurden verarbeitet.")
+            # Blatt 1: Suchergebnisse
+            combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
+            worksheet = writer.sheets['Suchergebnisse']
+            worksheet.freeze_panes(1, 0)
+            for col_num, column_name in enumerate(combined_results.columns):
+                max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
+                worksheet.set_column(col_num, col_num, max_width + 2)
 
-if combined_results is not None and combined_summary is not None:
-    # Mapping von Nachnamen zu Personalnummern
-    name_to_personalnummer = {
-        "Fechner": "00010174",
-        "Fuhlbruegge": "00011021",
-        "Kelling": "00010319",
-        "Ohlenroth": "00010485",
-        "Quint": "00010551",
-        "Scheil": "00010600",
-        "Schmieder": "00010858",
-        "Tumanow": "00010825",
-        "Gehrmann": "00010537",
-        "Pogodski": "00010860",
-        "Effenberger": "00010164",
-        "Lange": "00010971",
-        "Oszmian": "00010494",
-        "Adler": "00010006",
-        "Stoltz": "00010664"
-    }
+            # Blatt 2: Auszahlung pro KW
+            combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
+            summary_sheet = writer.sheets['Auszahlung pro KW']
+            summary_sheet.freeze_panes(1, 0)
+            for col_num, column_name in enumerate(combined_summary.columns):
+                max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
+                summary_sheet.set_column(col_num, col_num, max_width + 2)
 
-    # Personalnummer hinzufügen
-    combined_summary['Personalnummer'] = combined_summary['Nachname'].map(name_to_personalnummer)
+            for row_num in range(len(combined_summary)):
+                kw = combined_summary.iloc[row_num]['KW']
+                if kw != current_kw:
+                    current_kw = kw
+                    current_color_index = (current_color_index + 1) % len(kw_colors)
+                row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+                for col_num, value in enumerate(combined_summary.iloc[row_num]):
+                    summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        workbook = writer.book
-        kw_colors = ['#FFEB9C', '#D9EAD3', '#F4CCCC', '#CFE2F3', '#FFD966']
-        current_kw = None
-        current_color_index = 0
-
-        # Blatt 1: Suchergebnisse
-        combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
-        worksheet = writer.sheets['Suchergebnisse']
-        worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-        for col_num, column_name in enumerate(combined_results.columns):
-            max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
-            worksheet.set_column(col_num, col_num, max_width + 2)
-
-        # Blatt 2: Auszahlung pro KW
-        combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
-        summary_sheet = writer.sheets['Auszahlung pro KW']
-        summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-        for col_num, column_name in enumerate(combined_summary.columns):
-            max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
-            summary_sheet.set_column(col_num, col_num, max_width + 2)
-
-        for row_num in range(len(combined_summary)):
-            kw = combined_summary.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_color_index = (current_color_index + 1) % len(kw_colors)
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-            for col_num, value in enumerate(combined_summary.iloc[row_num]):
-                summary_sheet.write(row_num + 1, col_num, str(value), row_format)
-
-    output.seek(0)
-    st.download_button(
-        label="Kombinierte Ergebnisse als Excel herunterladen",
-        data=output.getvalue(),
-        file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+        output.seek(0)
+        st.download_button(
+            label="Kombinierte Ergebnisse als Excel herunterladen",
+            data=output.getvalue(),
+            file_name="Kombinierte_Suchergebnisse_nach_KW.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
