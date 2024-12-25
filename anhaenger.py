@@ -13,86 +13,6 @@ uploaded_files = st.file_uploader("Lade deine Excel- oder CSV-Dateien hoch", typ
 combined_results = None
 combined_summary = None
 
-# Vollständiges Mapping von Nachnamen zu Personalnummern
-name_to_personalnummer = {
-    "Adler": {"Philipp": "00041450"},
-    "Auer": {"Frank": "00020795"},
-    "Batkowski": {"Tilo": "00046601"},
-    "Benabbes": {"Badr": "00048980"},
-    "Biebow": {"Thomas": "00042004"},
-    "Bläsing": {"Elmar": "00049093"},
-    "Bursian": {"Ronny": "00025714"},
-    "Buth": {"Sven": "00046673"},
-    "Carstensen": {"Martin": "00042412"},
-    "Chege": {"Moses Gichuru": "00046106"},
-    "Dammasch": {"Bernd": "00019297"},
-    "Demuth": {"Harry": "00020796"},
-    "Doroszkiewicz": {"Bogumil": "00049132"},
-    "Dürr": {"Holger": "00039164"},
-    "Effenberger": {"Sven": "00030807"},
-    "Engel": {"Raymond": "00033429"},
-    "Fechner": {"Danny": "00043696", "Klaus": "00038278"},
-    "Findeklee": {"Bernd": "00020804"},
-    "Flint": {"Henryk": "00042414"},
-    "Fuhlbrügge": {"Justin": "00046289"},
-    "Gheonea": {"Costel-Daniel": "00050877"},
-    "Glanz": {"Björn": "00041914"},
-    "Gnech": {"Torsten": "00018613"},
-    "Greve": {"Nicole": "00040760"},
-    "Guthmann": {"Fred": "00018328"},
-    "Hagen": {"Andy": "00020271"},
-    "Hartig": {"Sebastian": "00044120"},
-    "Haus": {"David": "00046101"},
-    "Heeser": {"Bernd": "00041916"},
-    "Helm": {"Philipp": "00046685"},
-    "Henkel": {"Bastian": "00048187"},
-    "Holtz": {"Torsten": "00021159"},
-    "Janikiewicz": {"Radoslaw": "00042159"},
-    "Kleiber": {"Lutz": "00026255"},
-    "Klemkow": {"Ralf": "00040634"},
-    "Kollmann": {"Steffen": "00040988"},
-    "König": {"Heiko": "00036341"},
-    "Krazewski": {"Cezary": "00039463"},
-    "Krieger": {"Christian": "00049092"},
-    "Krull": {"Benjamin": "00044192"},
-    "Lange": {"Michael": "00035407"},
-    "Lewandowski": {"Kamil": "00041044"},
-    "Likoonski": {"Vladimir": "00044766"},
-    "Linke": {"Erich": "00048377"},
-    "Lefkih": {"Houssni": "00052293"},
-    "Ludolf": {"Michel": "00048814"},
-    "Marouni": {"Ayyoub": "00048986"},
-    "Mintel": {"Mario": "00046686"},
-    "Ohlenroth": {"Nadja": "00042114"},
-    "Ohms": {"Torsten": "00019300"},
-    "Okoth": {"Tedy Omondi": "00046107"},
-    "Oszmian": {"Jakub": "00039464"},
-    "Pabst": {"Torsten": "00021976"},
-    "Pawlak": {"Bartosz": "00036381"},
-    "Piepke": {"Torsten": "00021390"},
-    "Plinke": {"Kilian": "00044137"},
-    "Pogodski": {"Enrico": "00046668"},
-    "Quint": {"Stefan": "00035718"},
-    "Rimba": {"Rimba Gona": "00046108"},
-    "Sarwatka": {"Heiko": "00028747"},
-    "Scheil": {"Eric-Rene": "00038579", "Rene": "00020851"},
-    "Schlichting": {"Michael": "00021452"},
-    "Schlutt": {"Hubert": "00020880", "Rene": "00042932"},
-    "Schmieder": {"Steffen": "00046286"},
-    "Schneider": {"Matthias": "00045495"},
-    "Schulz": {"Julian": "00049130", "Stephan": "00041558"},
-    "Singh": {"Jagtar": "00040902"},
-    "Stoltz": {"Thorben": "00040991"},
-    "Thal": {"Jannic": "00046006"},
-    "Wachnowski": {"Klaus": "00026019"},
-    "Wendel": {"Danilo": "00048994"},
-    "Wille": {"Rene": "00021393"},
-    "Wisniewski": {"Krzysztof": "00046550"},
-    "Zander": {"Jan": "00042454"},
-    "Zosel": {"Ingo": "00026303"},
-}
-
-
 if uploaded_files:
     all_results = []
     all_summaries = []
@@ -190,21 +110,15 @@ if combined_results is not None and combined_summary is not None:
         current_kw = None
         current_color_index = 0
 
-
-    # Blatt 1: Suchergebnisse
-    if not combined_results.empty:
+        # Blatt 1: Suchergebnisse
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
         worksheet = writer.sheets['Suchergebnisse']
-        worksheet.freeze_panes(1, 0)  # Erste Zeile fixieren
-
-        # Spaltenbreite automatisch anpassen
+        worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
         for col_num, column_name in enumerate(combined_results.columns):
             max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
             worksheet.set_column(col_num, col_num, max_width + 2)
 
         # Farben anwenden
-        current_kw = None
-        current_color_index = -1
         for row_num in range(len(combined_results)):
             kw = combined_results.iloc[row_num]['KW']
             if kw != current_kw:
@@ -214,20 +128,14 @@ if combined_results is not None and combined_summary is not None:
             for col_num, value in enumerate(combined_results.iloc[row_num]):
                 worksheet.write(row_num + 1, col_num, str(value), row_format)
 
-    # Blatt 2: Auszahlung pro KW
-    if not combined_summary.empty:
+        # Blatt 2: Auszahlung pro KW
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         summary_sheet = writer.sheets['Auszahlung pro KW']
-        summary_sheet.freeze_panes(1, 0)  # Erste Zeile fixieren
-
-        # Spaltenbreite automatisch anpassen
+        summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
         for col_num, column_name in enumerate(combined_summary.columns):
             max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
             summary_sheet.set_column(col_num, col_num, max_width + 2)
 
-        # Farben anwenden
-        current_kw = None
-        current_color_index = -1
         for row_num in range(len(combined_summary)):
             kw = combined_summary.iloc[row_num]['KW']
             if kw != current_kw:
@@ -237,62 +145,41 @@ if combined_results is not None and combined_summary is not None:
             for col_num, value in enumerate(combined_summary.iloc[row_num]):
                 summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
-    # Blatt 3: Auflistung Fahrzeuge
-if combined_results is not None and not combined_results.empty:
-    st.write("Schreibe das Blatt: Auflistung Fahrzeuge")
-    
-    # Kategorie-Spalte hinzufügen
-    combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
-        lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
-                  "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
-    )
+        # Blatt 3: Auflistung Fahrzeuge
+        combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
+            lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
+                      "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
+        )
+        vehicle_grouped = combined_results.pivot_table(
+            index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
+            columns='Kennzeichen',
+            values='Verdienst',
+            aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
+            fill_value=0
+        ).reset_index()
 
-    # Pivot-Tabelle erstellen
-    vehicle_grouped = combined_results.pivot_table(
-        index=['KW', 'Kategorie', 'Nachname', 'Vorname'],
-        columns='Kennzeichen',
-        values='Verdienst',
-        aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
-        fill_value=0
-    ).reset_index()
+        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
+        for col in vehicle_grouped.columns[4:]:
+            vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
 
-    # Gesamtsumme berechnen
-    vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
-    for col in vehicle_grouped.columns[4:]:
-        vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
+        vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
+        vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
-    # KW sortieren und bereinigen
-    vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
-    vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
-
-    # Blatt schreiben
-    if not vehicle_grouped.empty:
         vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
         vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
-        vehicle_sheet.freeze_panes(1, 0)  # Erste Zeile fixieren
-
-        # Spaltenbreite automatisch anpassen
+        vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
         for col_num, column_name in enumerate(vehicle_grouped.columns):
             max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
             vehicle_sheet.set_column(col_num, col_num, max_width + 2)
 
-        # Farben für KW - Gleiche wie in anderen Blättern
-        kw_colors = ["#FFEBEE", "#E3F2FD", "#E8F5E9", "#FFF3E0"]  # Farbcodes für Kalenderwochen
-        kw_color_map = {}  # Dictionary zur Zuordnung von KW zu Farben
-        current_color_index = -1
-
         for row_num in range(len(vehicle_grouped)):
             kw = vehicle_grouped.iloc[row_num]['KW']
-            if kw not in kw_color_map:  # Neue KW erhält die nächste Farbe
+            if kw != current_kw:
+                current_kw = kw
                 current_color_index = (current_color_index + 1) % len(kw_colors)
-                kw_color_map[kw] = kw_colors[current_color_index]
-            row_format = workbook.add_format({'bg_color': kw_color_map[kw], 'border': 1})
+            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
             for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
                 vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
-    else:
-        st.warning("Blatt 'Auflistung Fahrzeuge' konnte nicht erstellt werden, da keine Daten vorhanden sind.")
-
-
 
     output.seek(0)
     st.download_button(
