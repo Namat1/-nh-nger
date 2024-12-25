@@ -243,6 +243,7 @@ with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
     # Blatt 3: Auflistung Fahrzeuge
 if combined_results is not None and not combined_results.empty:
     st.write("Schreibe das Blatt: Auflistung Fahrzeuge")
+    
     # Kategorie-Spalte hinzufügen
     combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
         lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
@@ -293,6 +294,7 @@ if combined_results is not None and not combined_results.empty:
                 vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
     else:
         st.warning("Blatt 'Auflistung Fahrzeuge' konnte nicht erstellt werden, da keine Daten vorhanden sind.")
+
 
 
 output.seek(0)
