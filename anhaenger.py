@@ -241,47 +241,50 @@ with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
     # Blatt 3: Auflistung Fahrzeuge
-    if combined_results is not None and not combined_results.empty:
-        st.write("Schreibe das Blatt: Auflistung Fahrzeuge")
-        combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
-            lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
-                      "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
-        )
-        vehicle_grouped = combined_results.pivot_table(
-            index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
-            columns='Kennzeichen',
-            values='Verdienst',
-            aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
-            fill_value=0
-        ).reset_index()
+if combined_results is not None and not combined_results.empty:
+    st.write("Schreibe das Blatt: Auflistung Fahrzeuge")
+    combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
+        lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
+                  "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
+    )
+    vehicle_grouped = combined_results.pivot_table(
+        index=['KW', 'Kategorie', 'Nachname', 'Vorname'],
+        columns='Kennzeichen',
+        values='Verdienst',
+        aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
+        fill_value=0
+    ).reset_index()
 
-        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
-        for col in vehicle_grouped.columns[4:]:
-            vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
+    vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
+    for col in vehicle_grouped.columns[4:]:
+        vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
 
-        vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
-        vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+    vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
+    vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
-        vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
-        vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
-        vehicle_sheet.freeze_panes(1, 0)  # Erste Zeile fixieren
+    vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
+    vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
+    vehicle_sheet.freeze_panes(1, 0)  # Erste Zeile fixieren
 
-        # Spaltenbreite automatisch anpassen
-        for col_num, column_name in enumerate(vehicle_grouped.columns):
-            max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
-            vehicle_sheet.set_column(col_num, col_num, max_width + 2)
+    # Spaltenbreite automatisch anpassen
+    for col_num, column_name in enumerate(vehicle_grouped.columns):
+        max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
+        vehicle_sheet.set_column(col_num, col_num, max_width + 2)
 
-        # Farben anwenden basierend auf Kategorie
-        current_category = None
-        current_color_index = -1
-        for row_num in range(len(vehicle_grouped)):
-            category = vehicle_grouped.iloc[row_num]['Kategorie']
-            if category != current_category:
-                current_category = category
-                current_color_index = (current_color_index + 1) % len(kw_colors)
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-            for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
-                vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
+    # Farben für KW - Gleiche wie in anderen Blättern
+    kw_colors = ["#FFEBEE", "#E3F2FD", "#E8F5E9", "#FFF3E0"]  # Farbcodes für Kalenderwochen
+    kw_color_map = {}  # Dictionary zur Zuordnung von KW zu Farben
+    current_color_index = -1
+
+    for row_num in range(len(vehicle_grouped)):
+        kw = vehicle_grouped.iloc[row_num]['KW']
+        if kw not in kw_color_map:  # Neue KW erhält die nächste Farbe
+            current_color_index = (current_color_index + 1) % len(kw_colors)
+            kw_color_map[kw] = kw_colors[current_color_index]
+        row_format = workbook.add_format({'bg_color': kw_color_map[kw], 'border': 1})
+        for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
+            vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
+
 
 output.seek(0)
 st.download_button(
