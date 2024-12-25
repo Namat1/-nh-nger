@@ -183,18 +183,16 @@ if uploaded_files:
     st.success("FERTIG! Alle Dateien wurden verarbeitet.")
 
     if combined_results is not None and combined_summary is not None:
-        combined_summary['Personalnummer'] = combined_summary.apply(lambda row: name_to_personalnummer.get(row['Nachname'], {}).get(row['Vorname'], "Unbekannt"), axis=1)
-
         output = BytesIO()
-with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-    workbook = writer.book  # Workbook-Objekt abrufen
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            workbook = writer.book
 
     # Farben definieren
     kw_colors = ["#FFEBEE", "#E3F2FD", "#E8F5E9", "#FFF3E0"]  # Farbcodes für Kalenderwochen
 
     # Blatt 1: Suchergebnisse
-    if combined_results is not None and not combined_results.empty:
-        st.write("Schreibe das Blatt: Suchergebnisse")
+    if not combined_results.empty:
+        combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
         worksheet = writer.sheets['Suchergebnisse']
         worksheet.freeze_panes(1, 0)  # Erste Zeile fixieren
@@ -217,8 +215,8 @@ with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 worksheet.write(row_num + 1, col_num, str(value), row_format)
 
     # Blatt 2: Auszahlung pro KW
-    if combined_summary is not None and not combined_summary.empty:
-        st.write("Schreibe das Blatt: Auszahlung pro KW")
+    if not combined_summary.empty:
+        combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         summary_sheet = writer.sheets['Auszahlung pro KW']
         summary_sheet.freeze_panes(1, 0)  # Erste Zeile fixieren
