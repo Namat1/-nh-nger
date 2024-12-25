@@ -197,7 +197,7 @@ with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         st.write("Schreibe das Blatt: Suchergebnisse")
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
         worksheet = writer.sheets['Suchergebnisse']
-        worksheet.freeze_panes(1, 0)
+        worksheet.freeze_panes(1, 0)  # Erste Zeile fixieren
 
         # Spaltenbreite automatisch anpassen
         for col_num, column_name in enumerate(combined_results.columns):
@@ -221,12 +221,24 @@ with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         st.write("Schreibe das Blatt: Auszahlung pro KW")
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         summary_sheet = writer.sheets['Auszahlung pro KW']
-        summary_sheet.freeze_panes(1, 0)
+        summary_sheet.freeze_panes(1, 0)  # Erste Zeile fixieren
 
         # Spaltenbreite automatisch anpassen
         for col_num, column_name in enumerate(combined_summary.columns):
             max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
             summary_sheet.set_column(col_num, col_num, max_width + 2)
+
+        # Farben anwenden
+        current_kw = None
+        current_color_index = -1
+        for row_num in range(len(combined_summary)):
+            kw = combined_summary.iloc[row_num]['KW']
+            if kw != current_kw:
+                current_kw = kw
+                current_color_index = (current_color_index + 1) % len(kw_colors)
+            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+            for col_num, value in enumerate(combined_summary.iloc[row_num]):
+                summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
     # Blatt 3: Auflistung Fahrzeuge
     if combined_results is not None and not combined_results.empty:
@@ -252,12 +264,24 @@ with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
 
         vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
         vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
-        vehicle_sheet.freeze_panes(1, 0)
+        vehicle_sheet.freeze_panes(1, 0)  # Erste Zeile fixieren
 
         # Spaltenbreite automatisch anpassen
         for col_num, column_name in enumerate(vehicle_grouped.columns):
             max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
             vehicle_sheet.set_column(col_num, col_num, max_width + 2)
+
+        # Farben anwenden basierend auf Kategorie
+        current_category = None
+        current_color_index = -1
+        for row_num in range(len(vehicle_grouped)):
+            category = vehicle_grouped.iloc[row_num]['Kategorie']
+            if category != current_category:
+                current_category = category
+                current_color_index = (current_color_index + 1) % len(kw_colors)
+            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+            for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
+                vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
 
 output.seek(0)
 st.download_button(
