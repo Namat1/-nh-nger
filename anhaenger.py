@@ -193,7 +193,8 @@ with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
     kw_colors = ["#FFEBEE", "#E3F2FD", "#E8F5E9", "#FFF3E0"]  # Farbcodes für Kalenderwochen
 
     # Blatt 1: Suchergebnisse
-    if combined_results is not None:
+    if combined_results is not None and not combined_results.empty:
+        st.write("Schreibe das Blatt: Suchergebnisse")
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
         worksheet = writer.sheets['Suchergebnisse']
         worksheet.freeze_panes(1, 0)
@@ -216,7 +217,8 @@ with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 worksheet.write(row_num + 1, col_num, str(value), row_format)
 
     # Blatt 2: Auszahlung pro KW
-    if combined_summary is not None:
+    if combined_summary is not None and not combined_summary.empty:
+        st.write("Schreibe das Blatt: Auszahlung pro KW")
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         summary_sheet = writer.sheets['Auszahlung pro KW']
         summary_sheet.freeze_panes(1, 0)
@@ -227,7 +229,8 @@ with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             summary_sheet.set_column(col_num, col_num, max_width + 2)
 
     # Blatt 3: Auflistung Fahrzeuge
-    if combined_results is not None and "Kategorie" in combined_results.columns:
+    if combined_results is not None and not combined_results.empty:
+        st.write("Schreibe das Blatt: Auflistung Fahrzeuge")
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
