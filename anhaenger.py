@@ -35,6 +35,7 @@ name_to_personalnummer = {
     "Findeklee": {"Bernd": "00020804"},
     "Flint": {"Henryk": "00042414"},
     "Fuhlbrügge": {"Justin": "00046289"},
+    "Gehrmann": {"Rayk": "00046702"},
     "Gheonea": {"Costel-Daniel": "00050877"},
     "Glanz": {"Björn": "00041914"},
     "Gnech": {"Torsten": "00018613"},
