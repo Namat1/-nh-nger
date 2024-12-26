@@ -255,7 +255,7 @@ if combined_results is not None and not combined_results.empty and combined_summ
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
         )
         vehicle_grouped = combined_results.pivot_table(
-            index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
+            index=['Kategorie', 'KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2'],  # Hinzufügen der neuen Spalten
             columns='Kennzeichen',
             values='Verdienst',
             aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
