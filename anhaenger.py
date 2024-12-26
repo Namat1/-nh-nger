@@ -275,13 +275,14 @@ for col in vehicle_grouped.columns[6:]:
 vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
 vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
-vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
-vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
-vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-vehicle_sheet.autofilter(0, 0, len(vehicle_grouped), len(vehicle_grouped.columns) - 1)  # Filter hinzufügen
-for col_num, column_name in enumerate(vehicle_grouped.columns):
-    max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
-    vehicle_sheet.set_column(col_num, col_num, max_width + 2)
+if 'Nachname 2' in vehicle_grouped.columns and 'Vorname 2' in vehicle_grouped.columns:
+    vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
+    vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
+    vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+    vehicle_sheet.autofilter(0, 0, len(vehicle_grouped), len(vehicle_grouped.columns) - 1)  # Filter hinzufügen
+    for col_num, column_name in enumerate(vehicle_grouped.columns):
+        max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
+        vehicle_sheet.set_column(col_num, col_num, max_width + 2)
 
 for row_num in range(len(vehicle_grouped)):
     kw = vehicle_grouped.iloc[row_num]['KW']
