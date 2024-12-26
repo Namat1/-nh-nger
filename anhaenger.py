@@ -210,31 +210,25 @@ if not combined_results.empty:  # Sicherstellen, dass die Tabelle nicht leer ist
         max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
         worksheet.set_column(col_num, col_num, max_width + 2)
 
-    # Filter hinzufügen (Zeilenindex von 0 bis len(combined_results), Spalten von 0 bis len(columns)-1)
+    # Filter hinzufügen
     worksheet.autofilter(0, 0, len(combined_results), len(combined_results.columns) - 1)
 
-        
+    # Farben anwenden
+    for row_num in range(len(combined_results)):
+        kw = combined_results.iloc[row_num]['KW']
+        if kw != current_kw:
+            current_kw = kw
+            current_color_index = (current_color_index + 1) % len(kw_colors)
+        row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+        for col_num, value in enumerate(combined_results.iloc[row_num]):
+            worksheet.write(row_num + 1, col_num, str(value), row_format)
 
-        # Farben anwenden
-        for row_num in range(len(combined_results)):
-            kw = combined_results.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_color_index = (current_color_index + 1) % len(kw_colors)
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-            for col_num, value in enumerate(combined_results.iloc[row_num]):
-                worksheet.write(row_num + 1, col_num, str(value), row_format)
-
-        # Blatt 2: Auszahlung pro KW
-        combined_summary['Personalnummer'] = combined_summary.apply(
-    lambda row: name_to_personalnummer.get(
-        row['Nachname'], {}
-    ).get(row['Vorname'], "Unbekannt"),
+# Blatt 2: Auszahlung pro KW
+combined_summary['Personalnummer'] = combined_summary.apply(
+    lambda row: name_to_personalnummer.get(row['Nachname'], {}).get(row['Vorname'], "Unbekannt"),
     axis=1
 )
 
-        
-# Blatt 2: Auszahlung pro KW
 if not combined_summary.empty:  # Sicherstellen, dass die Tabelle nicht leer ist
     combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
     summary_sheet = writer.sheets['Auszahlung pro KW']
@@ -248,36 +242,37 @@ if not combined_summary.empty:  # Sicherstellen, dass die Tabelle nicht leer ist
     # Filter hinzufügen
     summary_sheet.autofilter(0, 0, len(combined_summary), len(combined_summary.columns) - 1)
 
-        for row_num in range(len(combined_summary)):
-            kw = combined_summary.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_color_index = (current_color_index + 1) % len(kw_colors)
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-            for col_num, value in enumerate(combined_summary.iloc[row_num]):
-                summary_sheet.write(row_num + 1, col_num, str(value), row_format)
+    # Farben anwenden
+    for row_num in range(len(combined_summary)):
+        kw = combined_summary.iloc[row_num]['KW']
+        if kw != current_kw:
+            current_kw = kw
+            current_color_index = (current_color_index + 1) % len(kw_colors)
+        row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+        for col_num, value in enumerate(combined_summary.iloc[row_num]):
+            summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
-        # Blatt 3: Auflistung Fahrzeuge
-        combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
-            lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
-                      "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
-        )
-        vehicle_grouped = combined_results.pivot_table(
-            index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
-            columns='Kennzeichen',
-            values='Verdienst',
-            aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
-            fill_value=0
-        ).reset_index()
+# Blatt 3: Auflistung Fahrzeuge
+combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
+    lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"]
+    else "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
+)
 
-        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
-        for col in vehicle_grouped.columns[4:]:
-            vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
+vehicle_grouped = combined_results.pivot_table(
+    index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
+    columns='Kennzeichen',
+    values='Verdienst',
+    aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
+    fill_value=0
+).reset_index()
 
-        vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
-        vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
+for col in vehicle_grouped.columns[4:]:
+    vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
 
-       # Blatt 3: Auflistung Fahrzeuge
+vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
+vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+
 if not vehicle_grouped.empty:  # Sicherstellen, dass die Tabelle nicht leer ist
     vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
     vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
@@ -290,14 +285,16 @@ if not vehicle_grouped.empty:  # Sicherstellen, dass die Tabelle nicht leer ist
 
     # Filter hinzufügen
     vehicle_sheet.autofilter(0, 0, len(vehicle_grouped), len(vehicle_grouped.columns) - 1)
-        for row_num in range(len(vehicle_grouped)):
-            kw = vehicle_grouped.iloc[row_num]['KW']
-            if kw != current_kw:
-                current_kw = kw
-                current_color_index = (current_color_index + 1) % len(kw_colors)
-            row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-            for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
-                vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
+
+    # Farben anwenden
+    for row_num in range(len(vehicle_grouped)):
+        kw = vehicle_grouped.iloc[row_num]['KW']
+        if kw != current_kw:
+            current_kw = kw
+            current_color_index = (current_color_index + 1) % len(kw_colors)
+        row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+        for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
+            vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
 
     output.seek(0)
     st.download_button(
