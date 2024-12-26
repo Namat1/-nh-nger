@@ -183,6 +183,8 @@ if uploaded_files:
 
     if all_results:
         combined_results = pd.concat(all_results, ignore_index=True).fillna("")
+        combined_results['Unnamed: 6'] = combined_results.get('Unnamed: 6', "")
+        combined_results['Unnamed: 7'] = combined_results.get('Unnamed: 7', "")
         combined_summary = pd.concat(all_summaries, ignore_index=True).fillna("")
 
         # Sortieren der Daten
@@ -255,12 +257,13 @@ if combined_results is not None and not combined_results.empty and combined_summ
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
         )
         vehicle_grouped = combined_results.pivot_table(
-            index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
+            index=['Kategorie', 'KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2'],
             columns='Kennzeichen',
             values='Verdienst',
             aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
             fill_value=0
         ).reset_index()
+
 
         vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
         for col in vehicle_grouped.columns[4:]:
