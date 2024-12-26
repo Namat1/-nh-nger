@@ -127,14 +127,12 @@ if uploaded_files:
                                 'Unnamed: 7', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
 
             if all(col in df.columns for col in required_columns):
-                df['Unnamed: 11'] = df['Unnamed: 11'].astype(str).fillna("")
-                df['Unnamed: 14'] = df['Unnamed: 14'].astype(str).fillna("")
-
+                df['Unnamed: 11'] = df['Unnamed: 11'].astype(str)
+                df['Unnamed: 14'] = df['Unnamed: 14'].astype(str)
 
                 number_matches = df[df['Unnamed: 11'].isin(search_numbers) & (df['Unnamed: 11'] != "607")]
-                text_matches = df[df['Unnamed: 14'].fillna("").astype(str).str.contains('|'.join(search_strings), case=False, na=False) &
+                text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) &
                                   (df['Unnamed: 11'] != "607")]
-
                 combined_results_df = pd.concat([number_matches, text_matches]).drop_duplicates()
 
                 # Spalten umbenennen
@@ -154,50 +152,32 @@ if uploaded_files:
                 payment_mapping = {"602": 40, "156": 40, "620": 20, "350": 20, "520": 20}
 
                 def calculate_payment(row):
-                    kennzeichen = str(row['Kennzeichen']).strip()
-                    art_2 = str(row['Art 2']).strip().upper() if pd.notnull(row['Art 2']) else ""
+                    kennzeichen = row['Kennzeichen']
+                    art_2 = row['Art 2'].strip().upper()
                     return payment_mapping.get(kennzeichen, 0) if art_2 == "AZ" else 0
 
-
-
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
-                final_results['Verdienst'] = final_results['Verdienst'].fillna(0).apply(lambda x: float(str(x).replace(" €", "")) if isinstance(x, str) else x)
                 final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
                 final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
                 final_results['KW'] = kalenderwoche
                 all_results.append(final_results)
 
-                # Ergänze fehlende Nachnamen und Vornamen aus "Nachname 2" und "Vorname 2"
-                def ergänze_namen(row):
-                    if not row['Nachname'] and row['Nachname 2']:
-                        row['Nachname'] = row['Nachname 2']
-                    if not row['Vorname'] and row['Vorname 2']:
-                        row['Vorname'] = row['Vorname 2']
-                    return row
-                
-                final_results = final_results.apply(ergänze_namen, axis=1)    
-
-                # Wende die Ergänzungsfunktion auf die Summary-Daten an
+                # Zusammenfassung erstellen
                 summary = final_results.copy()
-                summary = summary.apply(ergänze_namen, axis=1)
-
-                # Gruppieren nach KW, Nachname und Vorname, nachdem die fehlenden Namen ergänzt wurden
-                summary = final_results.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
-
-                # Formatieren des Gesamtverdienstes
-                # Sicherstellen, dass die Spalte "Verdienst" numerisch ist
-                summary['Verdienst'] = pd.to_numeric(summary['Verdienst'], errors='coerce').fillna(0)
-                summary['Gesamtverdienst'] = summary['Verdienst'].astype(float).apply(lambda x: f"{x:.2f} €")
+                summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)
+                summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
+                summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
                 summary = summary.drop(columns=['Verdienst'])
 
-                # Personalnummer anhand der Namen suchen
+                # Personalnummer hinzufügen
                 summary['Personalnummer'] = summary.apply(
-                    lambda row: name_to_personalnummer.get(row['Nachname'], {}).get(row['Vorname'], "Unbekannt"),
+                    lambda row: name_to_personalnummer.get(
+                        (row['Nachname'], row['Vorname']), "Unbekannt"
+                    ),
                     axis=1
                 )
 
                 all_summaries.append(summary)
-
         except Exception as e:
             st.error(f"Fehler beim Verarbeiten der Datei {file_name}: {e}")
 
@@ -253,8 +233,8 @@ if combined_results is not None and not combined_results.empty and combined_summ
 
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         summary_sheet = writer.sheets['Auszahlung pro KW']
-        summary_sheet.freeze_panes(1, 0)
-        summary_sheet.autofilter(0, 0, len(combined_summary), len(combined_summary.columns) - 1) 
+        summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        summary_sheet.autofilter(0, 0, len(combined_summary), len(combined_summary.columns) - 1)  # Filter hinzufügen
         for col_num, column_name in enumerate(combined_summary.columns):
             max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
             summary_sheet.set_column(col_num, col_num, max_width + 2)
