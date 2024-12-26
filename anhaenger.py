@@ -191,7 +191,8 @@ if uploaded_files:
     progress_bar.empty()
     st.success("FERTIG! Alle Dateien wurden verarbeitet.")
 
-if combined_results is not None and combined_summary is not None:
+if combined_results is not None and not combined_results.empty and combined_summary is not None and not combined_summary.empty:
+
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         workbook = writer.book
