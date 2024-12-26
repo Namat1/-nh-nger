@@ -267,6 +267,13 @@ vehicle_grouped = combined_results.pivot_table(
     aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
     fill_value=0
 ).reset_index()
+# Wenn 'Nachname' und 'Vorname' leer sind, mit 'Nachname 2' und 'Vorname 2' auffüllen
+vehicle_grouped['Nachname'] = vehicle_grouped.apply(
+    lambda row: row['Nachname 2'] if not row['Nachname'] else row['Nachname'], axis=1
+)
+vehicle_grouped['Vorname'] = vehicle_grouped.apply(
+    lambda row: row['Vorname 2'] if not row['Vorname'] else row['Vorname'], axis=1
+)
 
 vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 6:].sum(axis=1)
 for col in vehicle_grouped.columns[6:]:
