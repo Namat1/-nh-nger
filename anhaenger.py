@@ -162,12 +162,31 @@ if uploaded_files:
                 final_results['KW'] = kalenderwoche
                 all_results.append(final_results)
 
-                # Zusammenfassung erstellen
+                # Verdienst-Zusammenfassung mit "Nachname 2" und "Vorname 2"
                 summary = final_results.copy()
                 summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)
-                summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
+
+                # Gruppieren nach KW, Nachname, Vorname UND Nachname 2, Vorname 2
+                summary = summary.groupby(['KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2']).agg({'Verdienst': 'sum'}).reset_index()
+
+                # Gesamtverdienst formatieren
                 summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
                 summary = summary.drop(columns=['Verdienst'])
+
+                # Fehlende Nachnamen und Vornamen ergänzen
+                summary['Nachname'] = summary.apply(lambda row: row['Nachname 2'] if row['Nachname'] == "" else row['Nachname'], axis=1)
+                summary['Vorname'] = summary.apply(lambda row: row['Vorname 2'] if row['Vorname'] == "" else row['Vorname'], axis=1)
+
+                # Personalnummer anhand der Namen suchen
+                summary['Personalnummer'] = summary.apply(
+                    lambda row: name_to_personalnummer.get(
+                        row['Nachname'], {}
+                    ).get(row['Vorname'], "Unbekannt"),
+                    axis=1
+                )
+
+
+                
 
                 
                 # Fehlende Nachnamen/Vornamen ergänzen
@@ -184,13 +203,7 @@ if uploaded_files:
 
                 summary[['Nachname', 'Vorname']] = summary.apply(ergänze_namen, axis=1)
 
-                # Personalnummer ergänzen
-                summary['Personalnummer'] = summary.apply(
-                    lambda row: name_to_personalnummer.get(
-                        row['Nachname'], {}
-                    ).get(row['Vorname'], "Unbekannt"),
-                    axis=1
-                )
+                
 
 
                 all_summaries.append(summary)
