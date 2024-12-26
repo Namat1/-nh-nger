@@ -269,8 +269,8 @@ if combined_results is not None and not combined_results.empty and combined_summ
         ).reset_index()
 
 
-        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].apply(pd.to_numeric, errors='coerce').sum(axis=1)
-        for col in vehicle_grouped.columns[4:]:
+        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 5:].apply(pd.to_numeric, errors='coerce').sum(axis=1)
+        for col in vehicle_grouped.columns[6:]:
             vehicle_grouped[col] = vehicle_grouped[col].apply(
                 lambda x: f"{float(x):.2f} €" if pd.notnull(x) and isinstance(x, (int, float)) else ""
 )
