@@ -186,6 +186,8 @@ if uploaded_files:
         combined_results['Unnamed: 6'] = combined_results.get('Unnamed: 6', "")
         combined_results['Unnamed: 7'] = combined_results.get('Unnamed: 7', "")
         combined_summary = pd.concat(all_summaries, ignore_index=True).fillna("")
+        st.write(combined_results.head())  # Überprüfe die ersten Zeilen von combined_results
+
 
         # Sortieren der Daten
         combined_results['KW_Numeric'] = combined_results['KW'].str.extract(r'(\d+)').astype(float).fillna(-1).astype(int)
