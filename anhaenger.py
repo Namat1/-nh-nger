@@ -127,12 +127,14 @@ if uploaded_files:
                                 'Unnamed: 7', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 14']
 
             if all(col in df.columns for col in required_columns):
-                df['Unnamed: 11'] = df['Unnamed: 11'].astype(str)
-                df['Unnamed: 14'] = df['Unnamed: 14'].astype(str)
+                df['Unnamed: 11'] = df['Unnamed: 11'].astype(str).fillna("")
+                df['Unnamed: 14'] = df['Unnamed: 14'].astype(str).fillna("")
+
 
                 number_matches = df[df['Unnamed: 11'].isin(search_numbers) & (df['Unnamed: 11'] != "607")]
-                text_matches = df[df['Unnamed: 14'].str.contains('|'.join(search_strings), case=False, na=False) &
+                text_matches = df[df['Unnamed: 14'].fillna("").astype(str).str.contains('|'.join(search_strings), case=False, na=False) &
                                   (df['Unnamed: 11'] != "607")]
+
                 combined_results_df = pd.concat([number_matches, text_matches]).drop_duplicates()
 
                 # Spalten umbenennen
@@ -159,7 +161,7 @@ if uploaded_files:
 
 
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
-                final_results['Verdienst'] = pd.to_numeric(final_results['Verdienst'].str.replace(" €", "", regex=False), errors='coerce').fillna(0)
+                final_results['Verdienst'] = final_results['Verdienst'].fillna(0).apply(lambda x: float(str(x).replace(" €", "")) if isinstance(x, str) else x)
                 final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
                 final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
                 final_results['KW'] = kalenderwoche
