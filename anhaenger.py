@@ -162,16 +162,21 @@ if uploaded_files:
                 final_results['KW'] = kalenderwoche
                 all_results.append(final_results)
 
-                # Verdienst-Zusammenfassung mit "Nachname 2" und "Vorname 2"
-                summary = final_results.copy()
-                summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)
+               # Verdienst-Zusammenfassung erstellen
+               summary = final_results.copy()
+               summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)
 
-                # Gruppieren nach KW, Nachname, Vorname UND Nachname 2, Vorname 2
-                summary = summary.groupby(['KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2']).agg({'Verdienst': 'sum'}).reset_index()
+               # Gruppieren nach KW, Nachname, Vorname UND Nachname 2, Vorname 2
+               summary = summary.groupby(['KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2']).agg({'Verdienst': 'sum'}).reset_index()
 
-                # Gesamtverdienst formatieren
-                summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
-                summary = summary.drop(columns=['Verdienst'])
+               # Fehlende Nachnamen und Vornamen aus "Nachname 2" und "Vorname 2" ergänzen
+               summary['Nachname'] = summary.apply(lambda row: row['Nachname'] if row['Nachname'] != "" else row['Nachname 2'], axis=1)
+               summary['Vorname'] = summary.apply(lambda row: row['Vorname'] if row['Vorname'] != "" else row['Vorname 2'], axis=1)
+
+               # Gesamtverdienst formatieren
+               summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
+               summary = summary.drop(columns=['Verdienst'])
+
 
                 # Fehlende Nachnamen und Vornamen ergänzen
                 summary['Nachname'] = summary.apply(lambda row: row['Nachname 2'] if row['Nachname'] == "" else row['Nachname'], axis=1)
@@ -184,27 +189,6 @@ if uploaded_files:
                     ).get(row['Vorname'], "Unbekannt"),
                     axis=1
                 )
-
-
-                
-
-                
-                # Fehlende Nachnamen/Vornamen ergänzen
-                def ergänze_namen(row):
-                    if not row['Nachname'] or not row['Vorname']:
-                        filter_kriterien = (
-                            (combined_results['Nachname 2'] == row['Nachname']) &
-                            (combined_results['Vorname 2'] == row['Vorname'])
-                        )
-                        ersatz = combined_results.loc[filter_kriterien, ['Nachname', 'Vorname']]
-                        if not ersatz.empty:
-                            return ersatz.iloc[0]
-                    return row[['Nachname', 'Vorname']]
-
-                summary[['Nachname', 'Vorname']] = summary.apply(ergänze_namen, axis=1)
-
-                
-
 
                 all_summaries.append(summary)
         except Exception as e:
