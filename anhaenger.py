@@ -148,6 +148,15 @@ if uploaded_files:
                 }
                 final_results = combined_results_df[required_columns].rename(columns=renamed_columns)
 
+                # Wenn Nachname und Vorname leer, Nachname 2 und Vorname 2 verwenden
+                def fill_empty_names(row):
+                    if not row['Nachname'] and not row['Vorname']:
+                        row['Nachname'] = row['Nachname 2']
+                        row['Vorname'] = row['Vorname 2']
+                    return row
+
+                final_results = final_results.apply(fill_empty_names, axis=1)
+
                 # Verdienst berechnen
                 payment_mapping = {"602": 40, "156": 40, "620": 20, "350": 20, "520": 20}
 
