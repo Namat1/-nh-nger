@@ -115,15 +115,9 @@ if uploaded_files:
 
             # Datei lesen
             if uploaded_file.name.endswith(('.xlsx', '.xls')):
-                df = pd.read_excel(uploaded_file, sheet_name="Touren", dtype=str)
+                df = pd.read_excel(uploaded_file, sheet_name="Touren")
             else:
-                df = pd.read_csv(uploaded_file, dtype=str)
- 
-             # Sicherstellen, dass alle benötigten Spalten vorhanden sind
-            if 'Unnamed: 6' not in df.columns:
-                df['Unnamed: 6'] = ""  # Leere Spalte hinzufügen
-            if 'Unnamed: 7' not in df.columns:
-                df['Unnamed: 7'] = ""  # Leere Spalte hinzufügen
+                df = pd.read_csv(uploaded_file)
 
             # Filteroptionen
             search_numbers = ["602", "620", "350", "520", "156"]
@@ -157,10 +151,10 @@ if uploaded_files:
                 # Verdienst berechnen
                 payment_mapping = {"602": 40, "156": 40, "620": 20, "350": 20, "520": 20}
 
-                # Filtern der Daten
-                number_matches = df[df['Kennzeichen'].isin(search_numbers)]
-                text_matches = df[df['Art 2'].str.contains('|'.join(search_strings), case=False, na=False)]
-                combined_results_df = pd.concat([number_matches, text_matches]).drop_duplicates()
+                def calculate_payment(row):
+                    kennzeichen = row['Kennzeichen']
+                    art_2 = row['Art 2'].strip().upper()
+                    return payment_mapping.get(kennzeichen, 0) if art_2 == "AZ" else 0
 
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
                 final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
@@ -255,19 +249,16 @@ if combined_results is not None and not combined_results.empty and combined_summ
             for col_num, value in enumerate(combined_summary.iloc[row_num]):
                 summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
-                
-                # Blatt 3: Auflistung Fahrzeuge
-        # Pivottabelle für Fahrzeugauflistung erstellen
+        # Blatt 3: Auflistung Fahrzeuge
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
             lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
                       "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
         )
-
         vehicle_grouped = combined_results.pivot_table(
-            index=['Kategorie', 'KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2'],
+            index=['Kategorie', 'KW', 'Nachname', 'Vorname'],
             columns='Kennzeichen',
-            values='Art 2',
-            aggfunc='count',
+            values='Verdienst',
+            aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
             fill_value=0
         ).reset_index()
 
@@ -278,7 +269,6 @@ if combined_results is not None and not combined_results.empty and combined_summ
         vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
         vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
-        # Schreiben der Daten in ein Excel-Blatt
         vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
         vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
         vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
@@ -287,7 +277,6 @@ if combined_results is not None and not combined_results.empty and combined_summ
             max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
             vehicle_sheet.set_column(col_num, col_num, max_width + 2)
 
-        # Farbgebung für die Zeilen basierend auf der KW
         for row_num in range(len(vehicle_grouped)):
             kw = vehicle_grouped.iloc[row_num]['KW']
             if kw != current_kw:
@@ -296,7 +285,6 @@ if combined_results is not None and not combined_results.empty and combined_summ
             row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
             for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
                 vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
-
 
     output.seek(0)
     st.download_button(
