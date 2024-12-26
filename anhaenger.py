@@ -170,6 +170,8 @@ if uploaded_files:
                     if not row['Vorname'] and row['Vorname 2']:
                         row['Vorname'] = row['Vorname 2']
                     return row
+                
+                final_results = final_results.apply(ergänze_namen, axis=1)    
 
                 # Wende die Ergänzungsfunktion auf die Summary-Daten an
                 summary = final_results.copy()
