@@ -11,7 +11,7 @@ uploaded_files = st.file_uploader("Lade deine Excel- oder CSV-Dateien hoch", typ
 
 # Variablen zur Zwischenspeicherung
 combined_results = None
-combined_summary = None
+combined_summary = None 
 
 name_to_personalnummer = {
     "Adler": {"Philipp": "00041450"},
