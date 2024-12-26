@@ -165,29 +165,19 @@ if uploaded_files:
                 # Zusammenfassung erstellen
                 summary = final_results.copy()
                 summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)
-                summary = summary.groupby(['KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2']).agg({'Verdienst': 'sum'}).reset_index()
+                summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
                 summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
                 summary = summary.drop(columns=['Verdienst'])
-
-                # Wenn Nachname und Vorname leer, Nachname 2 und Vorname 2 verwenden
-                def fill_empty_names_in_summary(row):
-                    if not row['Nachname'] and not row['Vorname']:
-                        row['Nachname'] = row['Nachname 2']
-                        row['Vorname'] = row['Vorname 2']
-                    return row
-
-                summary = summary.apply(fill_empty_names_in_summary, axis=1)
 
                 # Personalnummer hinzufügen
                 summary['Personalnummer'] = summary.apply(
                     lambda row: name_to_personalnummer.get(
-                        row['Nachname'], {}
-                    ).get(row['Vorname'], "Unbekannt"),
+                        (row['Nachname'], row['Vorname']), "Unbekannt"
+                    ),
                     axis=1
                 )
 
                 all_summaries.append(summary)
-
         except Exception as e:
             st.error(f"Fehler beim Verarbeiten der Datei {file_name}: {e}")
 
