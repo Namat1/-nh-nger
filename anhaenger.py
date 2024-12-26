@@ -250,6 +250,10 @@ if combined_results is not None and not combined_results.empty and combined_summ
                 summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
         # Blatt 3: Auflistung Fahrzeuge mit Nachname 2 und Vorname 2
+# Fehlende Werte durch Platzhalter ersetzen
+combined_results['Nachname 2'].fillna("Keine Angabe", inplace=True)
+combined_results['Vorname 2'].fillna("Keine Angabe", inplace=True)
+
 combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
     lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
               "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
