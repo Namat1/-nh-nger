@@ -159,7 +159,7 @@ if uploaded_files:
 
 
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
-               final_results['Verdienst'] = pd.to_numeric(final_results['Verdienst'].str.replace(" €", "", regex=False), errors='coerce').fillna(0)
+                final_results['Verdienst'] = pd.to_numeric(final_results['Verdienst'].str.replace(" €", "", regex=False), errors='coerce').fillna(0)
                 final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
                 final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
                 final_results['KW'] = kalenderwoche
