@@ -255,27 +255,27 @@ if combined_results is not None and not combined_results.empty and combined_summ
             for col_num, value in enumerate(combined_summary.iloc[row_num]):
                 summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
-        # Blatt 3: Auflistung Fahrzeuge
-       # Pivottabelle für Fahrzeugauflistung erstellen
-combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
-    lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
-              "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
-)
+                # Blatt 3: Auflistung Fahrzeuge
+        # Pivottabelle für Fahrzeugauflistung erstellen
+        combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
+            lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
+                      "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
+        )
 
-vehicle_grouped = combined_results.pivot_table(
-    index=['Kategorie', 'KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2'],
-    columns='Kennzeichen',
-    values='Art 2',
-    aggfunc='count',
-    fill_value=0
-).reset_index()
+        vehicle_grouped = combined_results.pivot_table(
+            index=['Kategorie', 'KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2'],
+            columns='Kennzeichen',
+            values='Art 2',
+            aggfunc='count',
+            fill_value=0
+        ).reset_index()
 
-vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
-for col in vehicle_grouped.columns[4:]:
-    vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
+        vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
+        for col in vehicle_grouped.columns[4:]:
+            vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
 
-vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
-vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+        vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
+        vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
         vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
         vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
