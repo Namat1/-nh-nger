@@ -169,13 +169,29 @@ if uploaded_files:
                 summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
                 summary = summary.drop(columns=['Verdienst'])
 
-                # Personalnummer hinzufügen
+                
+                # Fehlende Nachnamen/Vornamen ergänzen
+                def ergänze_namen(row):
+                    if not row['Nachname'] or not row['Vorname']:
+                        filter_kriterien = (
+                            (combined_results['Nachname 2'] == row['Nachname']) &
+                            (combined_results['Vorname 2'] == row['Vorname'])
+                        )
+                        ersatz = combined_results.loc[filter_kriterien, ['Nachname', 'Vorname']]
+                        if not ersatz.empty:
+                            return ersatz.iloc[0]
+                    return row[['Nachname', 'Vorname']]
+
+                summary[['Nachname', 'Vorname']] = summary.apply(ergänze_namen, axis=1)
+
+                # Personalnummer ergänzen
                 summary['Personalnummer'] = summary.apply(
                     lambda row: name_to_personalnummer.get(
-                        (row['Nachname'], row['Vorname']), "Unbekannt"
-                    ),
+                        row['Nachname'], {}
+                    ).get(row['Vorname'], "Unbekannt"),
                     axis=1
                 )
+
 
                 all_summaries.append(summary)
         except Exception as e:
