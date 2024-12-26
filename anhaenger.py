@@ -148,6 +148,12 @@ if uploaded_files:
                 }
                 final_results = combined_results_df[required_columns].rename(columns=renamed_columns)
 
+
+                # Fehlende Werte und Leerzeichen behandeln
+                final_results['Nachname'] = final_results['Nachname'].fillna("").str.strip()
+                final_results['Vorname'] = final_results['Vorname'].fillna("").str.strip()
+                final_results['Nachname 2'] = final_results['Nachname 2'].fillna("").str.strip()
+                final_results['Vorname 2'] = final_results['Vorname 2'].fillna("").str.strip()
                 # Fehlende Namen aus 'Nachname 2' und 'Vorname 2' ergänzen
                 final_results['Nachname'] = final_results.apply(
                    lambda row: row['Nachname 2'] if pd.isna(row['Nachname']) or row['Nachname'] == '' else row['Nachname'],
