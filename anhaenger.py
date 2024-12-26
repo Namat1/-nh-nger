@@ -262,15 +262,15 @@ if combined_results is not None and not combined_results.empty and combined_summ
             fill_value=0
         ).reset_index()
 
-        # Entferne das Euro-Zeichen und konvertiere die Spalten in numerische Werte
-for col in vehicle_grouped.columns[4:]:
-    vehicle_grouped[col] = vehicle_grouped[col].replace(" €", "", regex=True).astype(float)
+       # Entferne das Euro-Zeichen und konvertiere die Spalten in numerische Werte
+       for col in vehicle_grouped.columns[4:]:
+           vehicle_grouped[col] = vehicle_grouped[col].replace(" €", "", regex=True).astype(float)
 
-# Berechne die Gesamtsumme der numerischen Spalten
-vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
+       # Berechne die Gesamtsumme der numerischen Spalten
+       vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 4:].sum(axis=1)
 
-# Formatiere die Gesamtsumme wieder als String mit Euro-Zeichen
-vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped['Gesamtsumme (€)'].apply(lambda x: f"{x:.2f} €")
+       # Formatiere die Gesamtsumme wieder als String mit Euro-Zeichen
+       vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped['Gesamtsumme (€)'].apply(lambda x: f"{x:.2f} €")
 
         for col in vehicle_grouped.columns[4:]:
             vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
