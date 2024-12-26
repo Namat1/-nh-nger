@@ -203,6 +203,7 @@ if combined_results is not None and combined_summary is not None:
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
         worksheet = writer.sheets['Suchergebnisse']
         worksheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        worksheet.autofilter(0, 0, len(combined_results), len(combined_results.columns) - 1)  # Filter hinzufügen
         for col_num, column_name in enumerate(combined_results.columns):
             max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
             worksheet.set_column(col_num, col_num, max_width + 2)
@@ -228,9 +229,11 @@ if combined_results is not None and combined_summary is not None:
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         summary_sheet = writer.sheets['Auszahlung pro KW']
         summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        summary_sheet.autofilter(0, 0, len(combined_summary), len(combined_summary.columns) - 1)  # Filter hinzufügen
         for col_num, column_name in enumerate(combined_summary.columns):
             max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
             summary_sheet.set_column(col_num, col_num, max_width + 2)
+
 
         for row_num in range(len(combined_summary)):
             kw = combined_summary.iloc[row_num]['KW']
@@ -264,6 +267,7 @@ if combined_results is not None and combined_summary is not None:
         vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
         vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
         vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+        vehicle_sheet.autofilter(0, 0, len(vehicle_grouped), len(vehicle_grouped.columns) - 1)  # Filter hinzufügen
         for col_num, column_name in enumerate(vehicle_grouped.columns):
             max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
             vehicle_sheet.set_column(col_num, col_num, max_width + 2)
