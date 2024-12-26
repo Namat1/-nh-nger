@@ -249,60 +249,60 @@ if combined_results is not None and not combined_results.empty and combined_summ
             for col_num, value in enumerate(combined_summary.iloc[row_num]):
                 summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
-     # Blatt 3: Auflistung Fahrzeuge
-combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
-    lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
-              "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
-)
+        # Blatt 3: Auflistung Fahrzeuge
+        combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
+            lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
+                      "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
+        )
 
-# Pivot-Table erstellen
-vehicle_grouped = combined_results.pivot_table(
-    index=['Kategorie', 'KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2'],
-    columns='Kennzeichen',
-    values='Verdienst',
-    aggfunc=lambda x: sum(float(str(v).replace(" €", "")) for v in x if isinstance(v, str)),
-    fill_value=0
-).reset_index()
+        # Pivot-Table erstellen
+        vehicle_grouped = combined_results.pivot_table(
+            index=['Kategorie', 'KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2'],
+            columns='Kennzeichen',
+            values='Verdienst',
+            aggfunc=lambda x: sum(float(str(v).replace(" €", "")) for v in x if isinstance(v, str)),
+            fill_value=0
+        ).reset_index()
 
-# Entferne das Euro-Zeichen und konvertiere Spalten in numerische Werte
-verdienst_spalten = vehicle_grouped.columns[6:]  # Dynamische Erkennung der Spalten
-for col in verdienst_spalten:
-    vehicle_grouped[col] = vehicle_grouped[col].astype(float)
+        # Entferne das Euro-Zeichen und konvertiere Spalten in numerische Werte
+        verdienst_spalten = vehicle_grouped.columns[6:]  # Dynamische Erkennung der Spalten
+        for col in verdienst_spalten:
+            vehicle_grouped[col] = vehicle_grouped[col].astype(float)
 
-# Berechne die Gesamtsumme der numerischen Spalten
-vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped[verdienst_spalten].sum(axis=1)
+       # Berechne die Gesamtsumme der numerischen Spalten
+       vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped[verdienst_spalten].sum(axis=1)
 
-# Formatiere die Spalten wieder als Strings mit Euro-Zeichen
-for col in verdienst_spalten:
-    vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
-vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped['Gesamtsumme (€)'].apply(lambda x: f"{x:.2f} €")
+       # Formatiere die Spalten wieder als Strings mit Euro-Zeichen
+       for col in verdienst_spalten:
+           vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
+       vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped['Gesamtsumme (€)'].apply(lambda x: f"{x:.2f} €")
 
-# Sortierung nach Kalenderwoche und Kategorie
-vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
-vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+       # Sortierung nach Kalenderwoche und Kategorie
+       vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
+       vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
-# Export auf Excel-Blatt
-vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
-vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
-vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-vehicle_sheet.autofilter(0, 0, len(vehicle_grouped), len(vehicle_grouped.columns) - 1)  # Filter hinzufügen
+       # Export auf Excel-Blatt
+       vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
+       vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
+       vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+       vehicle_sheet.autofilter(0, 0, len(vehicle_grouped), len(vehicle_grouped.columns) - 1)  # Filter hinzufügen
 
-# Spaltenbreite anpassen
-for col_num, column_name in enumerate(vehicle_grouped.columns):
-    max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
-    vehicle_sheet.set_column(col_num, col_num, max_width + 2)
+      # Spaltenbreite anpassen
+      for col_num, column_name in enumerate(vehicle_grouped.columns):
+          max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
+         vehicle_sheet.set_column(col_num, col_num, max_width + 2)
 
-# Zeilen einfärben nach Kalenderwoche
-current_kw = None
-current_color_index = 0
-for row_num in range(len(vehicle_grouped)):
-    kw = vehicle_grouped.iloc[row_num]['KW']
-    if kw != current_kw:
-        current_kw = kw
-        current_color_index = (current_color_index + 1) % len(kw_colors)
-    row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
-    for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
-        vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
+      # Zeilen einfärben nach Kalenderwoche
+      current_kw = None
+      current_color_index = 0
+      for row_num in range(len(vehicle_grouped)):
+          kw = vehicle_grouped.iloc[row_num]['KW']
+          if kw != current_kw:
+              current_kw = kw
+              current_color_index = (current_color_index + 1) % len(kw_colors)
+         row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
+         for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
+             vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
 
 
 
