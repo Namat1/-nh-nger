@@ -48,6 +48,7 @@ name_to_personalnummer = {
     "Henkel": {"Bastian": "00048187"},
     "Holtz": {"Torsten": "00021159"},
     "Janikiewicz": {"Radoslaw": "00042159"},
+    "Kelling": {"Jonas Ole": "00044140"},
     "Kleiber": {"Lutz": "00026255"},
     "Klemkow": {"Ralf": "00040634"},
     "Kollmann": {"Steffen": "00040988"},
