@@ -152,13 +152,14 @@ if uploaded_files:
                 payment_mapping = {"602": 40, "156": 40, "620": 20, "350": 20, "520": 20}
 
                 def calculate_payment(row):
-                    kennzeichen = row['Kennzeichen']
+                    kennzeichen = str(row['Kennzeichen']).strip()
                     art_2 = str(row['Art 2']).strip().upper() if pd.notnull(row['Art 2']) else ""
                     return payment_mapping.get(kennzeichen, 0) if art_2 == "AZ" else 0
 
 
+
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
-                final_results['Verdienst'] = pd.to_numeric(final_results['Verdienst'], errors='coerce').fillna(0)
+               final_results['Verdienst'] = pd.to_numeric(final_results['Verdienst'].str.replace(" €", "", regex=False), errors='coerce').fillna(0)
                 final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
                 final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
                 final_results['KW'] = kalenderwoche
@@ -179,7 +180,7 @@ if uploaded_files:
                 summary = summary.apply(ergänze_namen, axis=1)
 
                 # Gruppieren nach KW, Nachname und Vorname, nachdem die fehlenden Namen ergänzt wurden
-                summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
+                summary = final_results.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
 
                 # Formatieren des Gesamtverdienstes
                 # Sicherstellen, dass die Spalte "Verdienst" numerisch ist
@@ -249,8 +250,8 @@ if combined_results is not None and not combined_results.empty and combined_summ
 
         combined_summary.to_excel(writer, index=False, sheet_name="Auszahlung pro KW")
         summary_sheet = writer.sheets['Auszahlung pro KW']
-        summary_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-        summary_sheet.autofilter(0, 0, len(combined_summary), len(combined_summary.columns) - 1)  # Filter hinzufügen
+        summary_sheet.freeze_panes(1, 0)
+        summary_sheet.autofilter(0, 0, len(combined_summary), len(combined_summary.columns) - 1) 
         for col_num, column_name in enumerate(combined_summary.columns):
             max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
             summary_sheet.set_column(col_num, col_num, max_width + 2)
