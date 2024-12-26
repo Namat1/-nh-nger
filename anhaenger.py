@@ -158,6 +158,7 @@ if uploaded_files:
 
 
                 final_results['Verdienst'] = final_results.apply(calculate_payment, axis=1)
+                final_results['Verdienst'] = pd.to_numeric(final_results['Verdienst'], errors='coerce').fillna(0)
                 final_results = final_results[(final_results['Verdienst'] > 0) & final_results['Verdienst'].notna()]
                 final_results['Verdienst'] = final_results['Verdienst'].apply(lambda x: f"{x} €")
                 final_results['KW'] = kalenderwoche
@@ -182,7 +183,6 @@ if uploaded_files:
 
                 # Formatieren des Gesamtverdienstes
                 # Sicherstellen, dass die Spalte "Verdienst" numerisch ist
-                summary['Verdienst'] = pd.to_numeric(summary['Verdienst'], errors='coerce').fillna(0)
                 summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
                 summary = summary.drop(columns=['Verdienst'])
 
