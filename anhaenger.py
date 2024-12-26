@@ -186,7 +186,8 @@ if uploaded_files:
 
                 # Formatieren des Gesamtverdienstes
                 # Sicherstellen, dass die Spalte "Verdienst" numerisch ist
-                summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
+                summary['Verdienst'] = pd.to_numeric(summary['Verdienst'], errors='coerce').fillna(0)
+                summary['Gesamtverdienst'] = summary['Verdienst'].astype(float).apply(lambda x: f"{x:.2f} €")
                 summary = summary.drop(columns=['Verdienst'])
 
                 # Personalnummer anhand der Namen suchen
