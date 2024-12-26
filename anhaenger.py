@@ -249,17 +249,11 @@ if combined_results is not None and not combined_results.empty and combined_summ
             for col_num, value in enumerate(combined_summary.iloc[row_num]):
                 summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
-    # Blatt 3: Auflistung Fahrzeuge
-if 'Nachname 2' not in combined_results.columns or 'Vorname 2' not in combined_results.columns:
-    st.warning("Spalten 'Nachname 2' und 'Vorname 2' fehlen in 'Blatt 3'. Werte werden ergänzt.")
-    combined_results['Nachname 2'] = combined_results.get('Nachname 2', "").fillna("")
-    combined_results['Vorname 2'] = combined_results.get('Vorname 2', "").fillna("")
-
+        # Blatt 3: Auflistung Fahrzeuge mit Nachname 2 und Vorname 2
 combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
     lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
               "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
 )
-
 vehicle_grouped = combined_results.pivot_table(
     index=['Kategorie', 'KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2'],
     columns='Kennzeichen',
@@ -267,29 +261,21 @@ vehicle_grouped = combined_results.pivot_table(
     aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
     fill_value=0
 ).reset_index()
-# Wenn 'Nachname' und 'Vorname' leer sind, mit 'Nachname 2' und 'Vorname 2' auffüllen
-vehicle_grouped['Nachname'] = vehicle_grouped.apply(
-    lambda row: row['Nachname 2'] if not row['Nachname'] else row['Nachname'], axis=1
-)
-vehicle_grouped['Vorname'] = vehicle_grouped.apply(
-    lambda row: row['Vorname 2'] if not row['Vorname'] else row['Vorname'], axis=1
-)
 
 vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 6:].sum(axis=1)
 for col in vehicle_grouped.columns[6:]:
     vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
 
 vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
-vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
+vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2']).drop(columns=['KW_Numeric'])
 
-if 'Nachname 2' in vehicle_grouped.columns and 'Vorname 2' in vehicle_grouped.columns:
-    vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
-    vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
-    vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
-    vehicle_sheet.autofilter(0, 0, len(vehicle_grouped), len(vehicle_grouped.columns) - 1)  # Filter hinzufügen
-    for col_num, column_name in enumerate(vehicle_grouped.columns):
-        max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
-        vehicle_sheet.set_column(col_num, col_num, max_width + 2)
+vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
+vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
+vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
+vehicle_sheet.autofilter(0, 0, len(vehicle_grouped), len(vehicle_grouped.columns) - 1)  # Filter hinzufügen
+for col_num, column_name in enumerate(vehicle_grouped.columns):
+    max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
+    vehicle_sheet.set_column(col_num, col_num, max_width + 2)
 
 for row_num in range(len(vehicle_grouped)):
     kw = vehicle_grouped.iloc[row_num]['KW']
