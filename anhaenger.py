@@ -187,7 +187,7 @@ if uploaded_files:
                    axis=1
                 )
 
-                all_summaries.append(summary)
+               all_summaries.append(summary)
         except Exception as e:
             st.error(f"Fehler beim Verarbeiten der Datei {file_name}: {e}")
 
