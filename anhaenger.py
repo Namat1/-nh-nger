@@ -163,31 +163,33 @@ if uploaded_files:
                 final_results['KW'] = kalenderwoche
                 all_results.append(final_results)
 
-                # Verdienst-Zusammenfassung erstellen
-                summary = final_results.copy()
-                summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)
+                # Ergänze fehlende Nachnamen und Vornamen aus "Nachname 2" und "Vorname 2"
+def ergänze_namen(row):
+    if not row['Nachname'] and row['Nachname 2']:
+        row['Nachname'] = row['Nachname 2']
+    if not row['Vorname'] and row['Vorname 2']:
+        row['Vorname'] = row['Vorname 2']
+    return row
 
-                # Gruppieren nach KW, Nachname, Vorname UND Nachname 2, Vorname 2
-                summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
+# Wende die Ergänzungsfunktion auf die Summary-Daten an
+summary = final_results.copy()
+summary = summary.apply(ergänze_namen, axis=1)
 
+# Gruppieren nach KW, Nachname und Vorname, nachdem die fehlenden Namen ergänzt wurden
+summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
 
-                # Fehlende Nachnamen und Vornamen aus "Nachname 2" und "Vorname 2" ergänzen
-                summary['Nachname'] = summary.apply(lambda row: row['Nachname'] if row['Nachname'] != "" else row['Nachname 2'], axis=1)
-                summary['Vorname'] = summary.apply(lambda row: row['Vorname'] if row['Vorname'] != "" else row['Vorname 2'], axis=1)
+# Formatieren des Gesamtverdienstes
+summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
+summary = summary.drop(columns=['Verdienst'])
 
-                # Gesamtverdienst formatieren
-                summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
-                summary = summary.drop(columns=['Verdienst'])
+# Personalnummer anhand der Namen suchen
+summary['Personalnummer'] = summary.apply(
+    lambda row: name_to_personalnummer.get(row['Nachname'], {}).get(row['Vorname'], "Unbekannt"),
+    axis=1
+)
 
-                # Personalnummer anhand der Namen suchen
-                summary['Personalnummer'] = summary.apply(
-                    lambda row: name_to_personalnummer.get(
-                        row['Nachname'], {}
-                    ).get(row['Vorname'], "Unbekannt"),
-                    axis=1
-                 )
+all_summaries.append(summary)
 
-                all_summaries.append(summary)
         except Exception as e:
             st.error(f"Fehler beim Verarbeiten der Datei {file_name}: {e}")
 
