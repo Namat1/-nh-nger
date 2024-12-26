@@ -207,6 +207,13 @@ if combined_results is not None and combined_summary is not None:
             max_width = max(combined_results[column_name].astype(str).map(len).max(), len(column_name), 10)
             worksheet.set_column(col_num, col_num, max_width + 2)
 
+
+        # Filter hinzufügen
+        worksheet.autofilter(0, 0, len(combined_results), len(combined_results.columns) - 1)
+
+
+        
+
         # Farben anwenden
         for row_num in range(len(combined_results)):
             kw = combined_results.iloc[row_num]['KW']
@@ -231,6 +238,11 @@ if combined_results is not None and combined_summary is not None:
         for col_num, column_name in enumerate(combined_summary.columns):
             max_width = max(combined_summary[column_name].astype(str).map(len).max(), len(column_name), 10)
             summary_sheet.set_column(col_num, col_num, max_width + 2)
+
+        # Filter hinzufügen
+        summary_sheet.autofilter(0, 0, len(combined_summary), len(combined_summary.columns) - 1)
+
+
 
         for row_num in range(len(combined_summary)):
             kw = combined_summary.iloc[row_num]['KW']
@@ -267,6 +279,9 @@ if combined_results is not None and combined_summary is not None:
         for col_num, column_name in enumerate(vehicle_grouped.columns):
             max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
             vehicle_sheet.set_column(col_num, col_num, max_width + 2)
+
+        # Filter hinzufügen
+        vehicle_sheet.autofilter(0, 0, len(vehicle_grouped), len(vehicle_grouped.columns) - 1)
 
         for row_num in range(len(vehicle_grouped)):
             kw = vehicle_grouped.iloc[row_num]['KW']
