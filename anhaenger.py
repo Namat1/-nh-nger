@@ -250,10 +250,19 @@ if combined_results is not None and not combined_results.empty and combined_summ
                 summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
         # # Blatt 3: Auflistung Fahrzeuge (angepasst für Nachname 2 und Vorname 2)
-combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
-    lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
-              "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
-)
+# Überprüfen der Spalte 'Kennzeichen'
+if combined_results is not None and 'Kennzeichen' in combined_results.columns:
+    if combined_results['Kennzeichen'].isnull().all():
+        st.error("Die Spalte 'Kennzeichen' ist leer. Überprüfe die Quelldaten.")
+    else:
+        # Kategorie zuweisen
+        combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
+            lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
+                      "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
+        ).fillna("Unbekannt")
+else:
+    st.error("Fehler: Die Spalte 'Kennzeichen' ist in combined_results nicht vorhanden.")
+
 
 vehicle_grouped = combined_results.pivot_table(
     index=['Kategorie', 'KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2'],
