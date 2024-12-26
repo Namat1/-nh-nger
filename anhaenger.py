@@ -250,29 +250,30 @@ if combined_results is not None and not combined_results.empty and combined_summ
                 summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
         # Blatt 3: Auflistung Fahrzeuge
-        combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
-            lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
-                      "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
+combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
+    lambda x: "Gruppe 1 (156, 602)" if x in ["156", "602"] else
+              "Gruppe 2 (620, 350, 520)" if x in ["620", "350", "520"] else "Andere"
 )
 
 # Pivot-Table erstellen
 vehicle_grouped = combined_results.pivot_table(
-    index=['Kategorie', 'KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2'],  # Einbeziehen der neuen Spalten
+    index=['Kategorie', 'KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2'],
     columns='Kennzeichen',
     values='Verdienst',
-    aggfunc=lambda x: sum(float(v.replace(" €", "")) for v in x if isinstance(v, str)),
+    aggfunc=lambda x: sum(float(str(v).replace(" €", "")) for v in x if isinstance(v, str)),
     fill_value=0
 ).reset_index()
 
 # Entferne das Euro-Zeichen und konvertiere Spalten in numerische Werte
-for col in vehicle_grouped.columns[6:]:  # Ab der 6. Spalte befinden sich die Verdienste
-    vehicle_grouped[col] = vehicle_grouped[col].replace(" €", "", regex=True).astype(float)
+verdienst_spalten = vehicle_grouped.columns[6:]  # Dynamische Erkennung der Spalten
+for col in verdienst_spalten:
+    vehicle_grouped[col] = vehicle_grouped[col].astype(float)
 
 # Berechne die Gesamtsumme der numerischen Spalten
-vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped.iloc[:, 6:].sum(axis=1)
+vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped[verdienst_spalten].sum(axis=1)
 
 # Formatiere die Spalten wieder als Strings mit Euro-Zeichen
-for col in vehicle_grouped.columns[6:]:
+for col in verdienst_spalten:
     vehicle_grouped[col] = vehicle_grouped[col].apply(lambda x: f"{x:.2f} €")
 vehicle_grouped['Gesamtsumme (€)'] = vehicle_grouped['Gesamtsumme (€)'].apply(lambda x: f"{x:.2f} €")
 
@@ -302,6 +303,7 @@ for row_num in range(len(vehicle_grouped)):
     row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
     for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
         vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
+
 
 
     output.seek(0)
