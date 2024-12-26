@@ -179,6 +179,8 @@ if uploaded_files:
                 summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
 
                 # Formatieren des Gesamtverdienstes
+                # Sicherstellen, dass die Spalte "Verdienst" numerisch ist
+                summary['Verdienst'] = pd.to_numeric(summary['Verdienst'], errors='coerce').fillna(0)
                 summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
                 summary = summary.drop(columns=['Verdienst'])
 
