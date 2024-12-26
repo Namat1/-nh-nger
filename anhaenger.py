@@ -255,6 +255,7 @@ if combined_results is not None and not combined_results.empty and combined_summ
             for col_num, value in enumerate(combined_summary.iloc[row_num]):
                 summary_sheet.write(row_num + 1, col_num, str(value), row_format)
 
+                
                 # Blatt 3: Auflistung Fahrzeuge
         # Pivottabelle für Fahrzeugauflistung erstellen
         combined_results['Kategorie'] = combined_results['Kennzeichen'].map(
@@ -277,6 +278,7 @@ if combined_results is not None and not combined_results.empty and combined_summ
         vehicle_grouped['KW_Numeric'] = vehicle_grouped['KW'].str.extract(r'(\d+)').astype(int)
         vehicle_grouped = vehicle_grouped.sort_values(by=['KW_Numeric', 'Kategorie', 'Nachname', 'Vorname']).drop(columns=['KW_Numeric'])
 
+        # Schreiben der Daten in ein Excel-Blatt
         vehicle_grouped.to_excel(writer, sheet_name="Auflistung Fahrzeuge", index=False)
         vehicle_sheet = writer.sheets['Auflistung Fahrzeuge']
         vehicle_sheet.freeze_panes(1, 0)  # Fixiert die erste Zeile
@@ -285,6 +287,7 @@ if combined_results is not None and not combined_results.empty and combined_summ
             max_width = max(vehicle_grouped[column_name].astype(str).map(len).max(), len(column_name), 10)
             vehicle_sheet.set_column(col_num, col_num, max_width + 2)
 
+        # Farbgebung für die Zeilen basierend auf der KW
         for row_num in range(len(vehicle_grouped)):
             kw = vehicle_grouped.iloc[row_num]['KW']
             if kw != current_kw:
@@ -293,6 +296,7 @@ if combined_results is not None and not combined_results.empty and combined_summ
             row_format = workbook.add_format({'bg_color': kw_colors[current_color_index], 'border': 1})
             for col_num, value in enumerate(vehicle_grouped.iloc[row_num]):
                 vehicle_sheet.write(row_num + 1, col_num, str(value), row_format)
+
 
     output.seek(0)
     st.download_button(
