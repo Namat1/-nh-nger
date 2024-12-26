@@ -148,15 +148,6 @@ if uploaded_files:
                 }
                 final_results = combined_results_df[required_columns].rename(columns=renamed_columns)
 
-                # Wenn Nachname und Vorname leer, Nachname 2 und Vorname 2 verwenden
-                def fill_empty_names(row):
-                    if not row['Nachname'] and not row['Vorname']:
-                        row['Nachname'] = row['Nachname 2']
-                        row['Vorname'] = row['Vorname 2']
-                    return row
-
-                final_results = final_results.apply(fill_empty_names, axis=1)
-
                 # Verdienst berechnen
                 payment_mapping = {"602": 40, "156": 40, "620": 20, "350": 20, "520": 20}
 
@@ -172,21 +163,31 @@ if uploaded_files:
                 all_results.append(final_results)
 
                 # Zusammenfassung erstellen
-                summary = final_results.copy()
-                summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)
-                summary = summary.groupby(['KW', 'Nachname', 'Vorname']).agg({'Verdienst': 'sum'}).reset_index()
-                summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
-                summary = summary.drop(columns=['Verdienst'])
+summary = final_results.copy()
+summary['Verdienst'] = summary['Verdienst'].str.replace(" €", "", regex=False).astype(float)
+summary = summary.groupby(['KW', 'Nachname', 'Vorname', 'Nachname 2', 'Vorname 2']).agg({'Verdienst': 'sum'}).reset_index()
+summary['Gesamtverdienst'] = summary['Verdienst'].apply(lambda x: f"{x:.2f} €")
+summary = summary.drop(columns=['Verdienst'])
 
-                # Personalnummer hinzufügen
-                summary['Personalnummer'] = summary.apply(
-                    lambda row: name_to_personalnummer.get(
-                        (row['Nachname'], row['Vorname']), "Unbekannt"
-                    ),
-                    axis=1
-                )
+# Wenn Nachname und Vorname leer, Nachname 2 und Vorname 2 verwenden
+def fill_empty_names_in_summary(row):
+    if not row['Nachname'] and not row['Vorname']:
+        row['Nachname'] = row['Nachname 2']
+        row['Vorname'] = row['Vorname 2']
+    return row
 
-                all_summaries.append(summary)
+summary = summary.apply(fill_empty_names_in_summary, axis=1)
+
+# Personalnummer hinzufügen
+summary['Personalnummer'] = summary.apply(
+    lambda row: name_to_personalnummer.get(
+        row['Nachname'], {}
+    ).get(row['Vorname'], "Unbekannt"),
+    axis=1
+)
+
+all_summaries.append(summary)
+
         except Exception as e:
             st.error(f"Fehler beim Verarbeiten der Datei {file_name}: {e}")
 
