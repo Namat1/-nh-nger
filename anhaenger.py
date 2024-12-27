@@ -121,7 +121,7 @@ if uploaded_files:
 
             # Spaltennamen bereinigen und prüfen
             df.columns = df.columns.str.strip()
-            st.write(f"Spalten in {file_name}: {df.columns.tolist()}")
+           
 
             # Mögliche Spaltennamen definieren
             possible_tour_columns = ['Tour 1', 'Tour 2', 'Tour 3', 'Tour 4']
