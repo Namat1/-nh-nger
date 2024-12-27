@@ -119,6 +119,9 @@ if uploaded_files:
             else:
                 df = pd.read_csv(uploaded_file)
 
+            # Fehlende Werte in 'Unnamed: 0' durch Werte aus 'Unnamed: 1' ersetzen
+            df['Unnamed: 0'] = df['Unnamed: 0'].fillna(df['Unnamed: 1'])
+
             # Filteroptionen
             search_numbers = ["602", "620", "350", "520", "156"]
             search_strings = ["AZ", "Az", "az", "MW", "Mw", "mw"]
