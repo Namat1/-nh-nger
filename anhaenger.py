@@ -114,20 +114,20 @@ if uploaded_files:
             kalenderwoche = f"KW{kw_match.group(1)}" if kw_match else "Keine KW gefunden"
 
             # Datei lesen
-if uploaded_file.name.endswith(('.xlsx', '.xls')):
-    df = pd.read_excel(uploaded_file, sheet_name="Touren")
-else:
-    df = pd.read_csv(uploaded_file)
+           if uploaded_file.name.endswith(('.xlsx', '.xls')):
+               df = pd.read_excel(uploaded_file, sheet_name="Touren")
+           else:
+               df = pd.read_csv(uploaded_file)
 
-# Spaltennamen bereinigen und prüfen
-df.columns = df.columns.str.strip()
-st.write(f"Spalten in {file_name}: {df.columns.tolist()}")
+          # Spaltennamen bereinigen und prüfen
+          df.columns = df.columns.str.strip()
+          st.write(f"Spalten in {file_name}: {df.columns.tolist()}")
 
-# Fehlende Werte in 'Unnamed: 0' durch Werte aus 'Unnamed: 1' ersetzen
-if 'Unnamed: 0' in df.columns and 'Unnamed: 1' in df.columns:
-    df['Unnamed: 0'] = df['Unnamed: 0'].combine_first(df['Unnamed: 1'])
-else:
-    st.warning(f"Die Datei {file_name} enthält nicht die Spalten 'Unnamed: 0' oder 'Unnamed: 1'.")
+         # Fehlende Werte in 'Unnamed: 0' durch Werte aus 'Unnamed: 1' ersetzen
+         if 'Unnamed: 0' in df.columns and 'Unnamed: 1' in df.columns:
+             df['Unnamed: 0'] = df['Unnamed: 0'].combine_first(df['Unnamed: 1'])
+         else:
+              st.warning(f"Die Datei {file_name} enthält nicht die Spalten 'Unnamed: 0' oder 'Unnamed: 1'.")
 
 
             # Filteroptionen
