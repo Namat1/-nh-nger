@@ -123,11 +123,18 @@ if uploaded_files:
             df.columns = df.columns.str.strip()
             st.write(f"Spalten in {file_name}: {df.columns.tolist()}")
 
-            # Fehlende Werte in 'Unnamed: 0' durch Werte aus 'Tour 4' ersetzen
-            if 'Unnamed: 0' in df.columns and 'Tour 4' in df.columns:
-                df['Unnamed: 0'] = df['Unnamed: 0'].fillna(df['Tour 4'])
+            # Mögliche Spaltennamen definieren
+            possible_tour_columns = ['Tour 1', 'Tour 2', 'Tour 3', 'Tour 4']
+
+            # Vorhandene Spalte finden
+            tour_column = next((col for col in possible_tour_columns if col in df.columns), None)
+
+            # Fehlende Werte in 'Unnamed: 0' durch Werte aus der gefundenen Spalte ergänzen
+            if 'Unnamed: 0' in df.columns and tour_column:
+                df['Unnamed: 0'] = df['Unnamed: 0'].fillna(df[tour_column])
             else:
-                st.warning("Die erwarteten Spalten 'Unnamed: 0' oder 'Tour 4' fehlen in der Datei.")
+                st.warning(f"Die erwarteten Spalten 'Unnamed: 0' oder eine der Spalten {possible_tour_columns} fehlen in der Datei.")
+
 
 
 
