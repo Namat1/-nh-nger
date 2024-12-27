@@ -241,6 +241,11 @@ if combined_results is not None and not combined_results.empty and combined_summ
         current_kw = None
         current_color_index = 0
 
+        # Entfernen der Spalten 'Nachname 2' und 'Vorname 2' aus den Ergebnissen
+        if 'Nachname 2' in combined_results.columns and 'Vorname 2' in combined_results.columns:
+            combined_results = combined_results.drop(columns=['Nachname 2', 'Vorname 2'])
+
+
         # Blatt 1: Suchergebnisse
         combined_results.to_excel(writer, index=False, sheet_name="Suchergebnisse")
         worksheet = writer.sheets['Suchergebnisse']
